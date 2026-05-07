@@ -1,11 +1,26 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import axios from 'axios';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import http from 'node:http';
+import https from 'node:https';
 import { defineConfig, type Plugin } from 'vite';
 import tsConfigPaths from 'vite-tsconfig-paths';
 
 function corsProxyPlugin(): Plugin {
-    const SKIP_HEADERS = new Set(['x-proxy-url', 'host', 'connection', 'transfer-encoding']);
+    const SKIP_HEADERS = new Set([
+        'x-proxy-url',
+        'host',
+        'connection',
+        'transfer-encoding',
+        'content-length',
+        'accept-encoding',
+        'origin',
+        'referer',
+    ]);
+
+    const httpAgent = new http.Agent();
+    const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
     async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
         const targetUrl = req.headers['x-proxy-url'];
@@ -21,42 +36,56 @@ function corsProxyPlugin(): Plugin {
             req.on('end', resolve);
             req.on('error', reject);
         });
-        const body = chunks.length > 0 ? Buffer.concat(chunks) : undefined;
 
-        const forwardHeaders: Record<string, string> = {};
+        const body = chunks.length > 0 ? Buffer.concat(chunks) : undefined;
+        const method = req.method ?? 'GET';
+        const target = new URL(targetUrl);
+        const headers: Record<string, string> = {};
+
         for (const [key, value] of Object.entries(req.headers)) {
-            if (SKIP_HEADERS.has(key.toLowerCase())) continue;
-            if (typeof value === 'string') forwardHeaders[key] = value;
+            const normalizedKey = key.toLowerCase();
+            if (SKIP_HEADERS.has(normalizedKey) || normalizedKey.startsWith('sec-')) continue;
+            if (typeof value === 'string') headers[key] = value;
         }
 
         try {
-            const method = req.method ?? 'GET';
-            const hasBody = !!body?.length && !['GET', 'HEAD'].includes(method.toUpperCase());
-
-            const upstream = await fetch(targetUrl, {
+            const upstream = await axios.request<ArrayBuffer>({
+                url: target.toString(),
                 method,
-                headers: forwardHeaders,
-                body: hasBody ? body : undefined,
+                headers,
+                data: ['GET', 'HEAD'].includes(method.toUpperCase()) ? undefined : body,
+                responseType: 'arraybuffer',
+                timeout: 30_000,
+                validateStatus: () => true,
+                decompress: true,
+                httpAgent,
+                httpsAgent,
             });
 
             res.statusCode = upstream.status;
-            upstream.headers.forEach((value, key) => {
-                const lower = key.toLowerCase();
-                if (
-                    lower === 'content-encoding' ||
-                    lower === 'transfer-encoding' ||
-                    lower === 'content-length'
-                )
-                    return;
-                res.setHeader(key, value);
-            });
 
-            const buffer = Buffer.from(await upstream.arrayBuffer());
-            res.setHeader('Content-Length', buffer.byteLength);
-            res.end(buffer);
-        } catch (e) {
+            for (const [key, value] of Object.entries(upstream.headers)) {
+                if (typeof value === 'undefined') continue;
+
+                const normalizedKey = key.toLowerCase();
+                if (
+                    normalizedKey === 'content-encoding' ||
+                    normalizedKey === 'transfer-encoding' ||
+                    normalizedKey === 'content-length'
+                ) {
+                    continue;
+                }
+
+                res.setHeader(key, Array.isArray(value) ? value : String(value));
+            }
+
+            const responseBody = Buffer.from(upstream.data);
+            res.setHeader('Content-Length', responseBody.byteLength);
+            res.end(responseBody);
+        } catch (error: unknown) {
+            console.error('[cors-proxy]', error);
             res.statusCode = 502;
-            res.end(String(e));
+            res.end(error instanceof Error ? error.message : String(error));
         }
     }
 
