@@ -1,4 +1,5 @@
 import { BODY_TYPES } from '@/core/constants';
+import { CodeEditor } from '@/shared/components/ui/code-editor';
 import {
     Select,
     SelectContent,
@@ -7,7 +8,6 @@ import {
     SelectValue,
 } from '@/shared/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
-import { Textarea } from '@/shared/components/ui/textarea';
 import { useRequestStore } from '../../store';
 import type { BodyType } from '../../types';
 import { KeyValueEditor } from '../KeyValueEditor';
@@ -98,12 +98,11 @@ export function RequestPanel() {
                     )}
 
                     {(bodyType === 'json' || bodyType === 'xml' || bodyType === 'text') && (
-                        <Textarea
+                        <CodeEditor
                             value={body}
-                            onChange={(e) => setBody(e.target.value)}
-                            placeholder={bodyType === 'json' ? '{\n  "key": "value"\n}' : ''}
-                            className="font-mono text-xs min-h-55 resize-y"
-                            spellCheck={false}
+                            onChange={setBody}
+                            language={bodyType}
+                            minHeight="220px"
                         />
                     )}
 

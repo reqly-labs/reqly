@@ -1,4 +1,5 @@
 import { Button } from '@/shared/components/ui/button';
+import { CodeEditor } from '@/shared/components/ui/code-editor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { cn } from '@/shared/utils/cn';
 import { formatBytes, formatJson, formatXml } from '@/shared/utils/format';
@@ -19,6 +20,13 @@ function formatBody(body: string, contentType: string): string {
     if (ct.includes('json')) return formatJson(body);
     if (ct.includes('xml') || ct.includes('html')) return formatXml(body);
     return body;
+}
+
+function languageFromContentType(contentType: string): 'json' | 'xml' | 'text' {
+    const ct = contentType.toLowerCase();
+    if (ct.includes('json')) return 'json';
+    if (ct.includes('xml') || ct.includes('html')) return 'xml';
+    return 'text';
 }
 
 function ResponseMeta({ response }: { response: ApiResponse }) {
@@ -69,6 +77,10 @@ function ResponseBody({ response }: { response: ApiResponse }) {
         () => formatBody(response.body, response.contentType),
         [response.body, response.contentType]
     );
+    const language = useMemo(
+        () => languageFromContentType(response.contentType),
+        [response.contentType]
+    );
 
     const headerCount = Object.keys(response.headers).length;
 
@@ -97,9 +109,13 @@ function ResponseBody({ response }: { response: ApiResponse }) {
             </div>
 
             <TabsContent value="body" className="flex-1 overflow-auto m-0">
-                <pre className="font-mono text-xs p-3 whitespace-pre-wrap break-all leading-relaxed text-(--color-text)">
-                    {formatted}
-                </pre>
+                <CodeEditor
+                    value={formatted}
+                    language={language}
+                    readOnly
+                    minHeight="100%"
+                    className="h-full border-0 rounded-none"
+                />
             </TabsContent>
 
             <TabsContent value="headers" className="flex-1 overflow-auto m-0">
