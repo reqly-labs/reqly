@@ -10,14 +10,24 @@ function TopBar() {
     const { theme, toggle } = useTheme();
 
     return (
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-(--color-border) shrink-0">
-            <h1 className="text-sm font-semibold tracking-tight text-(--color-text)">{APP_NAME}</h1>
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-(--color-border) shrink-0 bg-(--color-surface-raised)/40">
+            <div className="flex items-center gap-2">
+                <img
+                    src="https://arturbomtempo-dev.github.io/arturbomtempo-cdn/assets/images/projects/reqly/mascot.png"
+                    alt={APP_NAME + ' mascot'}
+                    className="h-7 w-7 object-contain select-none"
+                    draggable={false}
+                />
+                <h1 className="text-sm font-semibold tracking-tight text-(--color-text)">
+                    {APP_NAME}
+                </h1>
+            </div>
             <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggle}
                 aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-                className="h-7 w-7 text-muted-foreground hover:text-(--color-text)"
+                className="h-8 w-8 text-muted-foreground hover:text-(--color-text)"
             >
                 {theme === 'dark' ? (
                     <Sun className="h-3.5 w-3.5" />
