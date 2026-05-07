@@ -1,10 +1,10 @@
 import { useTheme } from '@/shared/lib/theme';
 import { cn } from '@/shared/utils/cn';
 import { json } from '@codemirror/lang-json';
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { xml } from '@codemirror/lang-xml';
-import { tags as t } from '@lezer/highlight';
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { EditorView } from '@codemirror/view';
+import { tags as t } from '@lezer/highlight';
 import CodeMirror from '@uiw/react-codemirror';
 import { useMemo } from 'react';
 

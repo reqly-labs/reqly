@@ -18,6 +18,32 @@ function decodeText(data: ArrayBuffer, contentType: string): string {
     }
 }
 
+function resolveTransport(targetUrl: string): {
+    requestUrl: string;
+    proxyHeaders: Record<string, string>;
+} {
+    const externalProxyUrl = import.meta.env.VITE_PROXY_URL?.trim();
+
+    if (import.meta.env.DEV) {
+        return {
+            requestUrl: '/__proxy',
+            proxyHeaders: { 'X-Proxy-Url': targetUrl },
+        };
+    }
+
+    if (externalProxyUrl) {
+        return {
+            requestUrl: externalProxyUrl,
+            proxyHeaders: { 'X-Proxy-Url': targetUrl },
+        };
+    }
+
+    return {
+        requestUrl: targetUrl,
+        proxyHeaders: {},
+    };
+}
+
 export function useRequest() {
     const { setResponse, setLoading, setError, nextRequest } = useRequestStore();
 
@@ -67,12 +93,14 @@ export function useRequest() {
             const targetUrl = new URL(url.trim());
             Object.entries(reqParams).forEach(([k, v]) => targetUrl.searchParams.append(k, v));
 
+            const { requestUrl, proxyHeaders } = resolveTransport(targetUrl.toString());
+
             const res = await axios.request<ArrayBuffer>({
                 method,
-                url: '/__proxy',
+                url: requestUrl,
                 headers: {
                     ...reqHeaders,
-                    'X-Proxy-Url': targetUrl.toString(),
+                    ...proxyHeaders,
                 },
                 data: reqData,
                 responseType: 'arraybuffer',
@@ -119,7 +147,18 @@ export function useRequest() {
                 previewUrl,
             });
         } catch (e) {
-            setError(e instanceof Error ? e.message : String(e));
+            if (
+                axios.isAxiosError(e) &&
+                !e.response &&
+                !import.meta.env.DEV &&
+                !import.meta.env.VITE_PROXY_URL
+            ) {
+                setError(
+                    'Falha de rede/CORS em produção. Este app estático só consegue chamar APIs que liberam CORS. Para APIs sem CORS, configure VITE_PROXY_URL para um proxy externo.'
+                );
+            } else {
+                setError(e instanceof Error ? e.message : String(e));
+            }
         } finally {
             setLoading(false);
         }
