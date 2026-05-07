@@ -53,16 +53,20 @@ export function useRequest() {
 
             const start = performance.now();
 
+            const targetUrl = new URL(url.trim());
+            Object.entries(reqParams).forEach(([k, v]) => targetUrl.searchParams.append(k, v));
+
             const res = await axios.request<string>({
                 method,
-                url: url.trim(),
-                params: Object.keys(reqParams).length ? reqParams : undefined,
-                headers: Object.keys(reqHeaders).length ? reqHeaders : undefined,
+                url: '/__proxy',
+                headers: {
+                    ...reqHeaders,
+                    'X-Proxy-Url': targetUrl.toString(),
+                },
                 data: reqData,
                 responseType: 'text',
                 timeout: 30_000,
                 validateStatus: () => true,
-                maxRedirects: 10,
             });
 
             const elapsed = Math.round(performance.now() - start);
