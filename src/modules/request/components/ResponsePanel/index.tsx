@@ -89,7 +89,7 @@ function ResponseBody({ response }: { response: ApiResponse }) {
     const headerCount = Object.keys(response.headers).length;
 
     return (
-        <Tabs defaultValue="body" className="flex flex-col h-full min-h-0">
+        <Tabs defaultValue="body" className="flex flex-col">
             <div className="px-3 pt-2 border-b border-(--color-border) shrink-0">
                 <TabsList className="h-8 bg-transparent gap-0 p-0">
                     <TabsTrigger
@@ -112,14 +112,14 @@ function ResponseBody({ response }: { response: ApiResponse }) {
                 </TabsList>
             </div>
 
-            <TabsContent value="body" className="flex-1 overflow-auto m-0">
+            <TabsContent value="body" className="m-0">
                 {isImage ? (
-                    <div className="flex h-full items-center justify-center p-4">
+                    <div className="flex items-center justify-center p-4">
                         <img
                             key={response.previewUrl}
                             src={response.previewUrl ?? undefined}
                             alt="Response preview"
-                            className="max-h-full max-w-full object-contain"
+                            className="max-w-full object-contain"
                         />
                     </div>
                 ) : (
@@ -128,13 +128,14 @@ function ResponseBody({ response }: { response: ApiResponse }) {
                         value={formatted}
                         language={language}
                         readOnly
-                        minHeight="100%"
-                        className="h-full border-0 rounded-none"
+                        autoHeight
+                        minHeight="200px"
+                        className="border-0 rounded-none"
                     />
                 )}
             </TabsContent>
 
-            <TabsContent value="headers" className="flex-1 overflow-auto m-0">
+            <TabsContent value="headers" className="m-0">
                 <div className="p-3 space-y-0">
                     {Object.entries(response.headers).map(([k, v]) => (
                         <div
@@ -152,7 +153,7 @@ function ResponseBody({ response }: { response: ApiResponse }) {
 }
 
 export function ResponsePanel() {
-    const { response, loading, error } = useRequestStore();
+    const { response, loading, error, requestId } = useRequestStore();
 
     if (loading) {
         return (
@@ -190,11 +191,9 @@ export function ResponsePanel() {
     }
 
     return (
-        <div className="flex flex-col h-full border border-(--color-border) rounded-md bg-(--color-surface) overflow-hidden">
+        <div className="flex flex-col h-full border border-(--color-border) rounded-md bg-(--color-surface) overflow-y-auto">
             <ResponseMeta response={response} />
-            <div className="flex-1 min-h-0">
-                <ResponseBody response={response} />
-            </div>
+            <ResponseBody key={requestId} response={response} />
         </div>
     );
 }

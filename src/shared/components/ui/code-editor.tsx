@@ -17,6 +17,7 @@ interface CodeEditorProps {
     readOnly?: boolean;
     className?: string;
     minHeight?: string;
+    autoHeight?: boolean;
 }
 
 export function CodeEditor({
@@ -26,6 +27,7 @@ export function CodeEditor({
     readOnly = false,
     className,
     minHeight = '220px',
+    autoHeight = false,
 }: CodeEditorProps) {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -62,7 +64,7 @@ export function CodeEditor({
             EditorView.theme(
                 {
                     '&.cm-editor': {
-                        height: '100%',
+                        height: autoHeight ? 'auto' : '100%',
                         minHeight,
                         fontSize: '12px',
                         backgroundColor: 'transparent',
@@ -75,6 +77,7 @@ export function CodeEditor({
                         backgroundColor: 'transparent',
                         fontFamily:
                             'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                        overflow: autoHeight ? 'visible' : 'auto',
                     },
                     '.cm-content': {
                         padding: '12px',
@@ -112,7 +115,7 @@ export function CodeEditor({
                 },
                 { dark: isDark }
             ),
-        [isDark, minHeight]
+        [isDark, minHeight, autoHeight]
     );
 
     return (

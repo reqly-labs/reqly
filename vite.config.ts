@@ -42,11 +42,18 @@ function corsProxyPlugin(): Plugin {
             res.statusCode = upstream.status;
             upstream.headers.forEach((value, key) => {
                 const lower = key.toLowerCase();
-                if (lower === 'content-encoding' || lower === 'transfer-encoding') return;
+                if (
+                    lower === 'content-encoding' ||
+                    lower === 'transfer-encoding' ||
+                    lower === 'content-length'
+                )
+                    return;
                 res.setHeader(key, value);
             });
 
-            res.end(Buffer.from(await upstream.arrayBuffer()));
+            const buffer = Buffer.from(await upstream.arrayBuffer());
+            res.setHeader('Content-Length', buffer.byteLength);
+            res.end(buffer);
         } catch (e) {
             res.statusCode = 502;
             res.end(String(e));

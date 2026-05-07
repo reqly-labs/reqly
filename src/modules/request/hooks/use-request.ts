@@ -19,23 +19,16 @@ function decodeText(data: ArrayBuffer, contentType: string): string {
 }
 
 export function useRequest() {
-    const {
-        method,
-        url,
-        params,
-        headers,
-        bodyType,
-        body,
-        formBody,
-        response,
-        setResponse,
-        setLoading,
-        setError,
-    } = useRequestStore();
+    const { setResponse, setLoading, setError, nextRequest } = useRequestStore();
 
     const send = async () => {
+        // Read ALL values fresh from the store at call-time, not from the closure
+        const { url, method, params, headers, bodyType, body, formBody } =
+            useRequestStore.getState();
+
         if (!url.trim()) return;
 
+        nextRequest();
         setLoading(true);
         setError(null);
         setResponse(null);
@@ -102,8 +95,9 @@ export function useRequest() {
             let previewUrl: string | null = null;
 
             if (isImage) {
-                if (response?.previewUrl) {
-                    URL.revokeObjectURL(response.previewUrl);
+                const prev = useRequestStore.getState().response;
+                if (prev?.previewUrl) {
+                    URL.revokeObjectURL(prev.previewUrl);
                 }
                 previewUrl = URL.createObjectURL(
                     new Blob([res.data], {

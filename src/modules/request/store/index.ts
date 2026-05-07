@@ -21,6 +21,7 @@ interface RequestState {
     response: ApiResponse | null;
     loading: boolean;
     error: string | null;
+    requestId: number;
 }
 
 interface RequestActions {
@@ -34,6 +35,7 @@ interface RequestActions {
     setResponse: (response: ApiResponse | null) => void;
     setLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
+    nextRequest: () => void;
 }
 
 export const useRequestStore = create<RequestState & RequestActions>((set, get) => ({
@@ -47,8 +49,10 @@ export const useRequestStore = create<RequestState & RequestActions>((set, get) 
     response: null,
     loading: false,
     error: null,
+    requestId: 0,
 
     setMethod: (method) => set({ method }),
+    nextRequest: () => set((s) => ({ requestId: s.requestId + 1 })),
     setUrl: (url) => set({ url }),
     setParams: (params) => set({ params }),
     setHeaders: (headers) => set({ headers }),
