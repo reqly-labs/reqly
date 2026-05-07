@@ -18,7 +18,7 @@ function TopBar() {
                     className="h-7 w-7 object-contain select-none"
                     draggable={false}
                 />
-                <h1 className="text-sm font-semibold tracking-tight text-(--color-text)">
+                <h1 className="text-lg font-semibold tracking-tight text-(--color-text)">
                     {APP_NAME}
                 </h1>
             </div>
