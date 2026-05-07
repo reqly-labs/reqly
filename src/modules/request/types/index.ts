@@ -18,4 +18,5 @@ export interface ApiResponse {
     headers: Record<string, string>;
     body: string;
     contentType: string;
+    previewUrl?: string | null;
 }

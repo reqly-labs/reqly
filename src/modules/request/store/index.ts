@@ -36,7 +36,7 @@ interface RequestActions {
     setError: (error: string | null) => void;
 }
 
-export const useRequestStore = create<RequestState & RequestActions>((set) => ({
+export const useRequestStore = create<RequestState & RequestActions>((set, get) => ({
     method: 'GET',
     url: '',
     params: [newKV()],
@@ -55,7 +55,13 @@ export const useRequestStore = create<RequestState & RequestActions>((set) => ({
     setBodyType: (bodyType) => set({ bodyType }),
     setBody: (body) => set({ body }),
     setFormBody: (formBody) => set({ formBody }),
-    setResponse: (response) => set({ response }),
+    setResponse: (response) => {
+        const previous = get().response;
+        if (previous?.previewUrl && previous.previewUrl !== response?.previewUrl) {
+            URL.revokeObjectURL(previous.previewUrl);
+        }
+        set({ response });
+    },
     setLoading: (loading) => set({ loading }),
     setError: (error) => set({ error }),
 }));

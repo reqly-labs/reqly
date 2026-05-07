@@ -31,6 +31,7 @@ function languageFromContentType(contentType: string): 'json' | 'xml' | 'text' {
 
 function ResponseMeta({ response }: { response: ApiResponse }) {
     const [copied, setCopied] = useState(false);
+    const isImage = Boolean(response.previewUrl);
 
     const formatted = useMemo(
         () => formatBody(response.body, response.contentType),
@@ -59,20 +60,23 @@ function ResponseMeta({ response }: { response: ApiResponse }) {
                     </span>
                 </span>
             </div>
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCopy}
-                className="h-6 gap-1.5 px-2 text-xs text-muted-foreground hover:text-(--color-text)"
-            >
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? 'Copied' : 'Copy'}
-            </Button>
+            {!isImage && (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopy}
+                    className="h-6 gap-1.5 px-2 text-xs text-muted-foreground hover:text-(--color-text)"
+                >
+                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copied ? 'Copied' : 'Copy'}
+                </Button>
+            )}
         </div>
     );
 }
 
 function ResponseBody({ response }: { response: ApiResponse }) {
+    const isImage = Boolean(response.previewUrl);
     const formatted = useMemo(
         () => formatBody(response.body, response.contentType),
         [response.body, response.contentType]
@@ -109,13 +113,25 @@ function ResponseBody({ response }: { response: ApiResponse }) {
             </div>
 
             <TabsContent value="body" className="flex-1 overflow-auto m-0">
-                <CodeEditor
-                    value={formatted}
-                    language={language}
-                    readOnly
-                    minHeight="100%"
-                    className="h-full border-0 rounded-none"
-                />
+                {isImage ? (
+                    <div className="flex h-full items-center justify-center p-4">
+                        <img
+                            key={response.previewUrl}
+                            src={response.previewUrl ?? undefined}
+                            alt="Response preview"
+                            className="max-h-full max-w-full object-contain"
+                        />
+                    </div>
+                ) : (
+                    <CodeEditor
+                        key={`${response.contentType}:${response.size}:${response.time}:${formatted.slice(0, 64)}`}
+                        value={formatted}
+                        language={language}
+                        readOnly
+                        minHeight="100%"
+                        className="h-full border-0 rounded-none"
+                    />
+                )}
             </TabsContent>
 
             <TabsContent value="headers" className="flex-1 overflow-auto m-0">

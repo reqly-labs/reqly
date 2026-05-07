@@ -1,6 +1,23 @@
 import axios from 'axios';
 import { useRequestStore } from '../store';
 
+function getMimeType(contentType: string): string {
+    return contentType.split(';')[0]?.trim().toLowerCase() ?? '';
+}
+
+function getCharset(contentType: string): string {
+    const match = contentType.match(/charset=([^;]+)/i);
+    return match?.[1]?.trim() || 'utf-8';
+}
+
+function decodeText(data: ArrayBuffer, contentType: string): string {
+    try {
+        return new TextDecoder(getCharset(contentType)).decode(new Uint8Array(data));
+    } catch {
+        return new TextDecoder('utf-8').decode(new Uint8Array(data));
+    }
+}
+
 export function useRequest() {
     const {
         method,
@@ -10,6 +27,7 @@ export function useRequest() {
         bodyType,
         body,
         formBody,
+        response,
         setResponse,
         setLoading,
         setError,
@@ -56,7 +74,7 @@ export function useRequest() {
             const targetUrl = new URL(url.trim());
             Object.entries(reqParams).forEach(([k, v]) => targetUrl.searchParams.append(k, v));
 
-            const res = await axios.request<string>({
+            const res = await axios.request<ArrayBuffer>({
                 method,
                 url: '/__proxy',
                 headers: {
@@ -64,27 +82,47 @@ export function useRequest() {
                     'X-Proxy-Url': targetUrl.toString(),
                 },
                 data: reqData,
-                responseType: 'text',
+                responseType: 'arraybuffer',
                 timeout: 30_000,
                 validateStatus: () => true,
             });
 
             const elapsed = Math.round(performance.now() - start);
-            const responseText = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+            const contentType = (res.headers['content-type'] as string) ?? '';
+            const mimeType = getMimeType(contentType);
+            const isImage = mimeType.startsWith('image/');
 
             const respHeaders: Record<string, string> = {};
             Object.entries(res.headers).forEach(([k, v]) => {
                 if (typeof v === 'string') respHeaders[k] = v;
+                else if (Array.isArray(v)) respHeaders[k] = v.join(', ');
             });
+
+            let responseBody = '';
+            let previewUrl: string | null = null;
+
+            if (isImage) {
+                if (response?.previewUrl) {
+                    URL.revokeObjectURL(response.previewUrl);
+                }
+                previewUrl = URL.createObjectURL(
+                    new Blob([res.data], {
+                        type: mimeType || 'application/octet-stream',
+                    })
+                );
+            } else {
+                responseBody = decodeText(res.data, contentType);
+            }
 
             setResponse({
                 status: res.status,
                 statusText: res.statusText,
                 time: elapsed,
-                size: new Blob([responseText]).size,
+                size: res.data.byteLength,
                 headers: respHeaders,
-                body: responseText,
-                contentType: (res.headers['content-type'] as string) ?? '',
+                body: responseBody,
+                contentType,
+                previewUrl,
             });
         } catch (e) {
             setError(e instanceof Error ? e.message : String(e));
