@@ -10,12 +10,11 @@ export function storageGet<T>(key: string): T | null {
 export function storageSet<T>(key: string, value: T): void {
     try {
         localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-    }
+    } catch {}
 }
 
 export function storageRemove(key: string): void {
     try {
         localStorage.removeItem(key);
-    } catch {
-    }
+    } catch {}
+}
