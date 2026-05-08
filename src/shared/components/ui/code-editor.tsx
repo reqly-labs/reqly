@@ -77,7 +77,8 @@ export function CodeEditor({
                         backgroundColor: 'transparent',
                         fontFamily:
                             'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                        overflow: autoHeight ? 'visible' : 'auto',
+                        overflowX: 'auto',
+                        overflowY: autoHeight ? 'visible' : 'auto',
                     },
                     '.cm-content': {
                         padding: '12px',
@@ -119,7 +120,7 @@ export function CodeEditor({
     );
 
     return (
-        <div className={cn('overflow-hidden bg-transparent', className)}>
+        <div className={cn('overflow-x-auto bg-transparent', className)}>
             <CodeMirror
                 value={value}
                 onChange={(next) => onChange?.(next)}
