@@ -168,13 +168,8 @@ export function ResponsePanel() {
 
     if (error) {
         return (
-            <div className="flex flex-col h-full border border-destructive border-opacity-30 rounded-md bg-(--color-surface) overflow-hidden">
-                <div className="px-4 py-3 border-b border-(--color-border)">
-                    <span className="text-xs font-semibold text-destructive">Request failed</span>
-                </div>
-                <pre className="flex-1 overflow-auto font-mono text-xs p-4 whitespace-pre-wrap break-all text-muted-foreground">
-                    {error}
-                </pre>
+            <div className="flex h-full items-center justify-center border border-destructive border-opacity-30 rounded-md bg-(--color-surface)">
+                <span className="text-xs font-semibold text-destructive">Request failed</span>
             </div>
         );
     }

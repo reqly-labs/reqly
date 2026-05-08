@@ -146,19 +146,8 @@ export function useRequest() {
                 contentType,
                 previewUrl,
             });
-        } catch (e) {
-            if (
-                axios.isAxiosError(e) &&
-                !e.response &&
-                !import.meta.env.DEV &&
-                !import.meta.env.VITE_PROXY_URL
-            ) {
-                setError(
-                    'Falha de rede/CORS em produção. Este app estático só consegue chamar APIs que liberam CORS. Para APIs sem CORS, configure VITE_PROXY_URL para um proxy externo.'
-                );
-            } else {
-                setError(e instanceof Error ? e.message : String(e));
-            }
+        } catch {
+            setError('Request failed');
         } finally {
             setLoading(false);
         }
