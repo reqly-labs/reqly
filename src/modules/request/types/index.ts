@@ -20,3 +20,19 @@ export interface ApiResponse {
     contentType: string;
     previewUrl?: string | null;
 }
+
+export interface TabSnapshot {
+    method: HttpMethod;
+    url: string;
+    params: KV[];
+    headers: KV[];
+    bodyType: BodyType;
+    body: string;
+    formBody: KV[];
+    response: ApiResponse | null;
+}
+
+export interface Tab {
+    id: string;
+    snapshot: TabSnapshot;
+}
