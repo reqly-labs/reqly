@@ -18,38 +18,13 @@ function decodeText(data: ArrayBuffer, contentType: string): string {
     }
 }
 
-function isLocalUrl(url: string): boolean {
-    try {
-        const { hostname } = new URL(url);
-        return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
-    } catch {
-        return false;
-    }
-}
-
 function resolveTransport(targetUrl: string): {
     requestUrl: string;
     proxyHeaders: Record<string, string>;
 } {
-    const externalProxyUrl = import.meta.env.VITE_PROXY_URL?.trim();
-
-    if (isLocalUrl(targetUrl)) {
-        return {
-            requestUrl: targetUrl,
-            proxyHeaders: {},
-        };
-    }
-
     if (import.meta.env.DEV) {
         return {
             requestUrl: '/__proxy',
-            proxyHeaders: { 'X-Proxy-Url': targetUrl },
-        };
-    }
-
-    if (externalProxyUrl) {
-        return {
-            requestUrl: externalProxyUrl,
             proxyHeaders: { 'X-Proxy-Url': targetUrl },
         };
     }
