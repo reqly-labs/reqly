@@ -1,11 +1,13 @@
 import { cn } from '@/shared/utils/cn';
 import { Plus, X } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useRequestStore } from '../../store';
 import { useTabsStore } from '../../store/tabs';
 import type { Tab, TabSnapshot } from '../../types';
 import { MethodBadge } from '../MethodBadge';
 
 function tabLabel(tab: Tab): string {
+    if (tab.name) return tab.name;
     const url = tab.snapshot.url.trim();
     if (!url) return 'New Request';
     try {
@@ -23,11 +25,16 @@ function captureSnapshot(): TabSnapshot {
 }
 
 export function TabBar() {
-    const { tabs, activeTabId, addTab, closeTab, setActiveTab, syncActiveTab } = useTabsStore();
+    const { tabs, activeTabId, addTab, closeTab, setActiveTab, syncActiveTab, renameTab } =
+        useTabsStore();
     const { initFromSnapshot } = useRequestStore();
 
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingValue, setEditingValue] = useState('');
+    const inputRef = useRef<HTMLInputElement>(null);
+
     const handleTabClick = (id: string) => {
-        if (id === activeTabId) return;
+        if (id === activeTabId || editingId === id) return;
         syncActiveTab(captureSnapshot());
         const target = tabs.find((t) => t.id === id);
         if (target) {
@@ -53,14 +60,36 @@ export function TabBar() {
         }
     };
 
+    const startEditing = (e: React.MouseEvent, tab: Tab) => {
+        e.stopPropagation();
+        setEditingId(tab.id);
+        setEditingValue(tab.name ?? tabLabel(tab));
+        setTimeout(() => {
+            inputRef.current?.select();
+        }, 0);
+    };
+
+    const commitEdit = () => {
+        if (editingId) renameTab(editingId, editingValue);
+        setEditingId(null);
+    };
+
+    const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') commitEdit();
+        if (e.key === 'Escape') setEditingId(null);
+        e.stopPropagation();
+    };
+
     return (
         <div className="flex items-center border-b border-(--color-border) bg-(--color-surface-raised)/40 px-2 shrink-0 overflow-x-auto">
             {tabs.map((tab) => {
                 const isActive = tab.id === activeTabId;
+                const isEditing = editingId === tab.id;
                 return (
                     <div
                         key={tab.id}
                         onClick={() => handleTabClick(tab.id)}
+                        onDoubleClick={(e) => startEditing(e, tab)}
                         className={cn(
                             'group flex items-center gap-1.5 px-3 py-2 text-xs cursor-pointer shrink-0 border-b-2 transition-colors duration-(--transition-fast) select-none max-w-44',
                             isActive
@@ -69,7 +98,19 @@ export function TabBar() {
                         )}
                     >
                         <MethodBadge method={tab.snapshot.method} className="text-[10px]" />
-                        <span className="truncate min-w-0">{tabLabel(tab)}</span>
+                        {isEditing ? (
+                            <input
+                                ref={inputRef}
+                                value={editingValue}
+                                onChange={(e) => setEditingValue(e.target.value)}
+                                onBlur={commitEdit}
+                                onKeyDown={handleInputKeyDown}
+                                onClick={(e) => e.stopPropagation()}
+                                className="min-w-0 w-24 bg-transparent outline-none border-b border-(--color-primary) text-xs text-(--color-text) font-inherit"
+                            />
+                        ) : (
+                            <span className="truncate min-w-0">{tabLabel(tab)}</span>
+                        )}
                         {tabs.length > 1 && (
                             <button
                                 onClick={(e) => handleClose(e, tab.id)}

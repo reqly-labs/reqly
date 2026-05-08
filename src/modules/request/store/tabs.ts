@@ -41,6 +41,7 @@ interface TabsActions {
     closeTab: (id: string) => string | null;
     setActiveTab: (id: string) => void;
     syncActiveTab: (snapshot: TabSnapshot) => void;
+    renameTab: (id: string, name: string) => void;
 }
 
 const initialTab = newTab();
@@ -78,6 +79,14 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             syncActiveTab: (snapshot) => {
                 set((s) => ({
                     tabs: s.tabs.map((t) => (t.id === s.activeTabId ? { ...t, snapshot } : t)),
+                }));
+            },
+
+            renameTab: (id, name) => {
+                set((s) => ({
+                    tabs: s.tabs.map((t) =>
+                        t.id === id ? { ...t, name: name.trim() || undefined } : t
+                    ),
                 }));
             },
         }),

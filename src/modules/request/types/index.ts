@@ -34,5 +34,6 @@ export interface TabSnapshot {
 
 export interface Tab {
     id: string;
+    name?: string;
     snapshot: TabSnapshot;
 }
