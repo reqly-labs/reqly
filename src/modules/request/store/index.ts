@@ -44,7 +44,7 @@ export const useRequestStore = create<RequestState & RequestActions>((set, get) 
     params: [newKV()],
     headers: [newKV()],
     bodyType: 'json',
-    body: '{\n  "title": "hello",\n  "body": "world",\n  "userId": 1\n}',
+    body: '',
     formBody: [newKV()],
     response: null,
     loading: false,
