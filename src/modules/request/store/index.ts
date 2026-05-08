@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { ApiResponse, BodyType, HttpMethod, KV } from '../types';
 
 function newKV(): KV {
@@ -38,36 +39,53 @@ interface RequestActions {
     nextRequest: () => void;
 }
 
-export const useRequestStore = create<RequestState & RequestActions>((set, get) => ({
-    method: 'GET',
-    url: '',
-    params: [newKV()],
-    headers: [newKV()],
-    bodyType: 'json',
-    body: '',
-    formBody: [newKV()],
-    response: null,
-    loading: false,
-    error: null,
-    requestId: 0,
+export const useRequestStore = create<RequestState & RequestActions>()(
+    persist(
+        (set, get) => ({
+            method: 'GET',
+            url: '',
+            params: [newKV()],
+            headers: [newKV()],
+            bodyType: 'json',
+            body: '',
+            formBody: [newKV()],
+            response: null,
+            loading: false,
+            error: null,
+            requestId: 0,
 
-    setMethod: (method) => set({ method }),
-    nextRequest: () => set((s) => ({ requestId: s.requestId + 1 })),
-    setUrl: (url) => set({ url }),
-    setParams: (params) => set({ params }),
-    setHeaders: (headers) => set({ headers }),
-    setBodyType: (bodyType) => set({ bodyType }),
-    setBody: (body) => set({ body }),
-    setFormBody: (formBody) => set({ formBody }),
-    setResponse: (response) => {
-        const previous = get().response;
-        if (previous?.previewUrl && previous.previewUrl !== response?.previewUrl) {
-            URL.revokeObjectURL(previous.previewUrl);
+            setMethod: (method) => set({ method }),
+            nextRequest: () => set((s) => ({ requestId: s.requestId + 1 })),
+            setUrl: (url) => set({ url }),
+            setParams: (params) => set({ params }),
+            setHeaders: (headers) => set({ headers }),
+            setBodyType: (bodyType) => set({ bodyType }),
+            setBody: (body) => set({ body }),
+            setFormBody: (formBody) => set({ formBody }),
+            setResponse: (response) => {
+                const previous = get().response;
+                if (previous?.previewUrl && previous.previewUrl !== response?.previewUrl) {
+                    URL.revokeObjectURL(previous.previewUrl);
+                }
+                set({ response });
+            },
+            setLoading: (loading) => set({ loading }),
+            setError: (error) => set({ error }),
+        }),
+        {
+            name: 'reqly:request',
+            partialize: (state) => ({
+                method: state.method,
+                url: state.url,
+                params: state.params,
+                headers: state.headers,
+                bodyType: state.bodyType,
+                body: state.body,
+                formBody: state.formBody,
+                response: state.response ? { ...state.response, previewUrl: null } : null,
+            }),
         }
-        set({ response });
-    },
-    setLoading: (loading) => set({ loading }),
-    setError: (error) => set({ error }),
-}));
+    )
+);
 
 export { newKV };

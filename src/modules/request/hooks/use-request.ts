@@ -39,7 +39,6 @@ export function useRequest() {
     const { setResponse, setLoading, setError, nextRequest } = useRequestStore();
 
     const send = async () => {
-        // Read ALL values fresh from the store at call-time, not from the closure
         const { url, method, params, headers, bodyType, body, formBody } =
             useRequestStore.getState();
 

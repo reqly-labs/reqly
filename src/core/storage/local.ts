@@ -11,7 +11,6 @@ export function storageSet<T>(key: string, value: T): void {
     try {
         localStorage.setItem(key, JSON.stringify(value));
     } catch {
-        // ignore
     }
 }
 
@@ -19,6 +18,4 @@ export function storageRemove(key: string): void {
     try {
         localStorage.removeItem(key);
     } catch {
-        // ignore
     }
-}
