@@ -6,6 +6,7 @@ import {
     Clock,
     FolderOpen,
     FolderPlus,
+    GripVertical,
     MoreHorizontal,
     Pencil,
     Plus,
@@ -17,6 +18,15 @@ import { useCollectionsStore } from '../../store/collections';
 import { useTabsStore } from '../../store/tabs';
 import type { Collection, SavedRequest, Tab, TabSnapshot } from '../../types';
 import { MethodBadge } from '../MethodBadge';
+
+interface DragPayload {
+    type: 'tab' | 'request';
+    tabId?: string;
+    requestId?: string;
+    sourceCollectionId?: string;
+}
+
+let currentDrag: DragPayload | null = null;
 
 function captureSnapshot(): TabSnapshot {
     const { method, url, params, headers, bodyType, body, formBody, auth, response } =
@@ -152,6 +162,7 @@ function RequestItem({ req, collectionId }: { req: SavedRequest; collectionId: s
     const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
     const openRequest = () => {
+        if (editing) return;
         const snapshot = captureSnapshot();
         syncActiveTab(snapshot);
         const newId = addTab();
@@ -173,13 +184,31 @@ function RequestItem({ req, collectionId }: { req: SavedRequest; collectionId: s
         setMenu({ x: e.clientX, y: e.clientY });
     };
 
+    const handleDragStart = (e: React.DragEvent) => {
+        currentDrag = { type: 'request', requestId: req.id, sourceCollectionId: collectionId };
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', req.id);
+    };
+
+    const handleDragEnd = () => {
+        currentDrag = null;
+    };
+
     return (
         <>
             <div
                 onClick={openRequest}
+                onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setEditing(true);
+                }}
                 onContextMenu={handleContextMenu}
-                className="group flex items-center gap-2 pl-7 pr-2 py-1 cursor-pointer hover:bg-(--color-surface-hover) rounded-sm transition-colors"
+                draggable
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                className="group flex items-center gap-2 pl-3 pr-2 py-1 cursor-pointer hover:bg-(--color-surface-hover) rounded-sm transition-colors"
             >
+                <GripVertical className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-40 cursor-grab text-muted-foreground" />
                 <MethodBadge method={req.snapshot.method} className="text-[9px] shrink-0" />
                 {editing ? (
                     <InlineEdit
@@ -231,12 +260,19 @@ function RequestItem({ req, collectionId }: { req: SavedRequest; collectionId: s
 }
 
 function CollectionItem({ collection }: { collection: Collection }) {
-    const { expandedIds, toggleExpanded, renameCollection, removeCollection, addRequest } =
-        useCollectionsStore();
+    const {
+        expandedIds,
+        toggleExpanded,
+        renameCollection,
+        removeCollection,
+        addRequest,
+        moveRequest,
+    } = useCollectionsStore();
 
     const expanded = expandedIds.includes(collection.id);
     const [editing, setEditing] = useState(false);
     const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+    const [dragOver, setDragOver] = useState(false);
 
     const handleSaveCurrentRequest = () => {
         const snapshot = captureSnapshot();
@@ -260,12 +296,66 @@ function CollectionItem({ collection }: { collection: Collection }) {
         setMenu({ x: e.clientX, y: e.clientY });
     };
 
+    const handleDragOver = (e: React.DragEvent) => {
+        if (!currentDrag) return;
+        if (currentDrag.type === 'request' && currentDrag.sourceCollectionId === collection.id)
+            return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setDragOver(true);
+    };
+
+    const handleDragLeave = () => setDragOver(false);
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragOver(false);
+        if (!currentDrag) return;
+
+        if (currentDrag.type === 'tab' && currentDrag.tabId) {
+            const tab = useTabsStore.getState().tabs.find((t) => t.id === currentDrag!.tabId);
+            if (tab) {
+                const snapshot =
+                    tab.id === useTabsStore.getState().activeTabId
+                        ? captureSnapshot()
+                        : tab.snapshot;
+                const url = snapshot.url.trim();
+                let name = tab.name || 'New Request';
+                if (!tab.name && url) {
+                    try {
+                        const parsed = new URL(url);
+                        name = parsed.pathname === '/' ? parsed.hostname : parsed.pathname;
+                    } catch {
+                        name = url.length > 24 ? url.slice(0, 24) + '…' : url;
+                    }
+                }
+                addRequest(collection.id, name, snapshot);
+                if (!expanded) toggleExpanded(collection.id);
+            }
+        } else if (
+            currentDrag.type === 'request' &&
+            currentDrag.requestId &&
+            currentDrag.sourceCollectionId
+        ) {
+            moveRequest(currentDrag.sourceCollectionId, collection.id, currentDrag.requestId);
+            if (!expanded) toggleExpanded(collection.id);
+        }
+
+        currentDrag = null;
+    };
+
     return (
         <div>
             <div
                 onClick={() => toggleExpanded(collection.id)}
                 onContextMenu={handleContextMenu}
-                className="group flex items-center gap-1.5 px-2 py-1.5 cursor-pointer hover:bg-(--color-surface-hover) rounded-sm transition-colors"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={cn(
+                    'group flex items-center gap-1.5 px-2 py-1.5 cursor-pointer hover:bg-(--color-surface-hover) rounded-sm transition-colors',
+                    dragOver && 'ring-2 ring-(--color-primary)/50 bg-(--color-primary)/5'
+                )}
             >
                 <ChevronRight
                     className={cn(
@@ -391,50 +481,187 @@ function NewCollectionInput({ onDone }: { onDone: () => void }) {
 
 function TabItem({ tab, isActive }: { tab: Tab; isActive: boolean }) {
     const { initFromSnapshot } = useRequestStore();
-    const { setActiveTab, syncActiveTab } = useTabsStore();
+    const { setActiveTab, syncActiveTab, renameTab, closeTab } = useTabsStore();
+    const [editing, setEditing] = useState(false);
+    const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
     const handleClick = () => {
-        if (isActive) return;
+        if (isActive || editing) return;
         const snapshot = captureSnapshot();
         syncActiveTab(snapshot);
         setActiveTab(tab.id);
         initFromSnapshot(tab.snapshot);
     };
 
+    const handleContextMenu = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setMenu({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleDragStart = (e: React.DragEvent) => {
+        currentDrag = { type: 'tab', tabId: tab.id };
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', tab.id);
+    };
+
+    const handleDragEnd = () => {
+        currentDrag = null;
+    };
+
+    const handleClose = () => {
+        const tabs = useTabsStore.getState().tabs;
+        if (tabs.length <= 1) return;
+        if (tab.id === useTabsStore.getState().activeTabId) {
+            syncActiveTab(captureSnapshot());
+        }
+        const newActiveId = closeTab(tab.id);
+        if (newActiveId) {
+            const newActive = useTabsStore.getState().tabs.find((t) => t.id === newActiveId);
+            if (newActive) initFromSnapshot(newActive.snapshot);
+        }
+    };
+
     return (
-        <div
-            onClick={handleClick}
-            className={cn(
-                'group flex items-center gap-2 px-2 py-1 cursor-pointer rounded-sm transition-colors',
-                isActive
-                    ? 'bg-(--color-surface-hover) text-(--color-text)'
-                    : 'hover:bg-(--color-surface-hover)'
-            )}
-        >
-            <MethodBadge method={tab.snapshot.method} className="text-[9px] shrink-0" />
-            <span
+        <>
+            <div
+                onClick={handleClick}
+                onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setEditing(true);
+                }}
+                onContextMenu={handleContextMenu}
+                draggable
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
                 className={cn(
-                    'text-xs truncate min-w-0 transition-colors',
+                    'group flex items-center gap-2 px-2 py-1 cursor-pointer rounded-sm transition-colors',
                     isActive
-                        ? 'text-(--color-text)'
-                        : 'text-(--color-text-subtle) group-hover:text-(--color-text)'
+                        ? 'bg-(--color-surface-hover) text-(--color-text)'
+                        : 'hover:bg-(--color-surface-hover)'
                 )}
             >
-                {tabLabel(tab)}
-            </span>
-        </div>
+                <GripVertical className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-40 cursor-grab text-muted-foreground" />
+                <MethodBadge method={tab.snapshot.method} className="text-[9px] shrink-0" />
+                {editing ? (
+                    <InlineEdit
+                        value={tab.name || tabLabel(tab)}
+                        onCommit={(name) => {
+                            renameTab(tab.id, name);
+                            setEditing(false);
+                        }}
+                        onCancel={() => setEditing(false)}
+                    />
+                ) : (
+                    <span
+                        className={cn(
+                            'text-xs truncate min-w-0 transition-colors',
+                            isActive
+                                ? 'text-(--color-text)'
+                                : 'text-(--color-text-subtle) group-hover:text-(--color-text)'
+                        )}
+                    >
+                        {tabLabel(tab)}
+                    </span>
+                )}
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setMenu({ x: rect.right, y: rect.bottom });
+                    }}
+                    className="ml-auto shrink-0 opacity-0 group-hover:opacity-100 p-0.5 rounded text-muted-foreground hover:text-(--color-text) transition-all"
+                >
+                    <MoreHorizontal className="h-3 w-3" />
+                </button>
+            </div>
+            {menu && (
+                <ContextMenu
+                    position={menu}
+                    onClose={() => setMenu(null)}
+                    items={[
+                        {
+                            label: 'Rename',
+                            icon: Pencil,
+                            onClick: () => setEditing(true),
+                        },
+                        ...(useTabsStore.getState().tabs.length > 1
+                            ? [
+                                  {
+                                      label: 'Close',
+                                      icon: Trash2,
+                                      onClick: handleClose,
+                                      destructive: true,
+                                  },
+                              ]
+                            : []),
+                    ]}
+                />
+            )}
+        </>
     );
 }
 
 function RecentSection() {
     const { tabs, activeTabId } = useTabsStore();
+    const { removeRequest } = useCollectionsStore();
+    const { initFromSnapshot } = useRequestStore();
+    const { addTab, syncActiveTab } = useTabsStore();
     const [expanded, setExpanded] = useState(true);
+    const [dragOver, setDragOver] = useState(false);
+
+    const handleDragOver = (e: React.DragEvent) => {
+        if (!currentDrag || currentDrag.type !== 'request') return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setDragOver(true);
+    };
+
+    const handleDragLeave = () => setDragOver(false);
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragOver(false);
+        if (!currentDrag || currentDrag.type !== 'request') return;
+        if (!currentDrag.requestId || !currentDrag.sourceCollectionId) return;
+
+        const collection = useCollectionsStore
+            .getState()
+            .collections.find((c) => c.id === currentDrag!.sourceCollectionId);
+        const req = collection?.requests.find((r) => r.id === currentDrag!.requestId);
+
+        if (req) {
+            const snapshot = captureSnapshot();
+            syncActiveTab(snapshot);
+            const newId = addTab();
+            const newTab = useTabsStore.getState().tabs.find((t) => t.id === newId);
+            if (newTab) {
+                const reqSnapshot = {
+                    ...req.snapshot,
+                    auth: req.snapshot.auth ?? { type: 'none' as const },
+                };
+                initFromSnapshot(reqSnapshot);
+                useTabsStore.getState().syncActiveTab(reqSnapshot);
+                useTabsStore.getState().renameTab(newId, req.name);
+            }
+            removeRequest(currentDrag.sourceCollectionId, currentDrag.requestId);
+        }
+
+        currentDrag = null;
+    };
 
     return (
         <div>
             <div
                 onClick={() => setExpanded((v) => !v)}
-                className="flex items-center gap-1.5 px-2 py-1.5 cursor-pointer hover:bg-(--color-surface-hover) rounded-sm transition-colors"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={cn(
+                    'flex items-center gap-1.5 px-2 py-1.5 cursor-pointer hover:bg-(--color-surface-hover) rounded-sm transition-colors',
+                    dragOver && 'ring-2 ring-(--color-primary)/50 bg-(--color-primary)/5'
+                )}
             >
                 <ChevronRight
                     className={cn(
