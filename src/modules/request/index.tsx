@@ -55,6 +55,7 @@ export function RequestModule() {
                 bodyType: state.bodyType,
                 body: state.body,
                 formBody: state.formBody,
+                auth: state.auth,
                 response: state.response,
             };
             useTabsStore.getState().syncActiveTab(snapshot);

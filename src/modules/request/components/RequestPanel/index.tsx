@@ -10,6 +10,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { useRequestStore } from '../../store';
 import type { BodyType } from '../../types';
+import { AuthEditor } from '../AuthEditor';
 import { KeyValueEditor } from '../KeyValueEditor';
 
 export function RequestPanel() {
@@ -19,6 +20,7 @@ export function RequestPanel() {
         bodyType,
         body,
         formBody,
+        auth,
         setParams,
         setHeaders,
         setBodyType,
@@ -61,6 +63,15 @@ export function RequestPanel() {
                             className="h-7 px-3 text-xs rounded-none border-b-2 border-transparent data-[state=active]:border-(--color-primary) data-[state=active]:bg-transparent data-[state=active]:shadow-none"
                         >
                             Body
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="auth"
+                            className="h-7 px-3 text-xs rounded-none border-b-2 border-transparent data-[state=active]:border-(--color-primary) data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                        >
+                            Auth
+                            {auth.type !== 'none' && (
+                                <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-(--color-primary)" />
+                            )}
                         </TabsTrigger>
                     </TabsList>
                 </div>
@@ -109,6 +120,10 @@ export function RequestPanel() {
                     {bodyType === 'form' && (
                         <KeyValueEditor items={formBody} onChange={setFormBody} />
                     )}
+                </TabsContent>
+
+                <TabsContent value="auth" className="flex-1 overflow-auto p-3 m-0">
+                    <AuthEditor />
                 </TabsContent>
             </Tabs>
         </div>

@@ -1,7 +1,8 @@
-import { BODY_TYPES, HTTP_METHODS } from '@/core/constants';
+import { AUTH_TYPES, BODY_TYPES, HTTP_METHODS } from '@/core/constants';
 
 export type HttpMethod = (typeof HTTP_METHODS)[number];
 export type BodyType = (typeof BODY_TYPES)[number];
+export type AuthType = (typeof AUTH_TYPES)[number];
 
 export interface KV {
     id: string;
@@ -9,6 +10,31 @@ export interface KV {
     value: string;
     enabled: boolean;
 }
+
+export interface AuthNone {
+    type: 'none';
+}
+
+export interface AuthBearer {
+    type: 'bearer';
+    token: string;
+    prefix: string;
+}
+
+export interface AuthBasic {
+    type: 'basic';
+    username: string;
+    password: string;
+}
+
+export interface AuthApiKey {
+    type: 'api-key';
+    key: string;
+    value: string;
+    addTo: 'header' | 'query';
+}
+
+export type Auth = AuthNone | AuthBearer | AuthBasic | AuthApiKey;
 
 export interface ApiResponse {
     status: number;
@@ -29,6 +55,7 @@ export interface TabSnapshot {
     bodyType: BodyType;
     body: string;
     formBody: KV[];
+    auth: Auth;
     response: ApiResponse | null;
 }
 

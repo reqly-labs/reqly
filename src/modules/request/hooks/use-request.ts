@@ -39,7 +39,7 @@ export function useRequest() {
     const { setResponse, setLoading, setError, nextRequest } = useRequestStore();
 
     const send = async () => {
-        const { url, method, params, headers, bodyType, body, formBody } =
+        const { url, method, params, headers, bodyType, body, formBody, auth } =
             useRequestStore.getState();
 
         if (!url.trim()) return;
@@ -55,6 +55,20 @@ export function useRequest() {
 
             const reqHeaders: Record<string, string> = {};
             headers.filter((h) => h.enabled && h.key).forEach((h) => (reqHeaders[h.key] = h.value));
+
+            if (auth.type === 'bearer' && auth.token) {
+                const prefix = auth.prefix || 'Bearer';
+                reqHeaders['Authorization'] = `${prefix} ${auth.token}`;
+            } else if (auth.type === 'basic' && (auth.username || auth.password)) {
+                const encoded = btoa(`${auth.username}:${auth.password}`);
+                reqHeaders['Authorization'] = `Basic ${encoded}`;
+            } else if (auth.type === 'api-key' && auth.key) {
+                if (auth.addTo === 'header') {
+                    reqHeaders[auth.key] = auth.value;
+                } else {
+                    reqParams[auth.key] = auth.value;
+                }
+            }
 
             let reqData: string | undefined;
 

@@ -20,6 +20,7 @@ export function defaultSnapshot(): TabSnapshot {
         bodyType: 'json',
         body: '',
         formBody: [newKV()],
+        auth: { type: 'none' },
         response: null,
     };
 }

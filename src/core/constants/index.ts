@@ -7,3 +7,4 @@ export const DEFAULT_REQUEST_TIMEOUT = 30_000;
 
 export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'] as const;
 export const BODY_TYPES = ['none', 'json', 'text', 'xml', 'form'] as const;
+export const AUTH_TYPES = ['none', 'bearer', 'basic', 'api-key'] as const;

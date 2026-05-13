@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ApiResponse, BodyType, HttpMethod, KV, TabSnapshot } from '../types';
+import type { ApiResponse, Auth, BodyType, HttpMethod, KV, TabSnapshot } from '../types';
 import { defaultSnapshot, useTabsStore } from './tabs';
 
 function newKV(): KV {
@@ -19,6 +19,7 @@ interface RequestState {
     bodyType: BodyType;
     body: string;
     formBody: KV[];
+    auth: Auth;
     response: ApiResponse | null;
     loading: boolean;
     error: string | null;
@@ -33,6 +34,7 @@ interface RequestActions {
     setBodyType: (bodyType: BodyType) => void;
     setBody: (body: string) => void;
     setFormBody: (formBody: KV[]) => void;
+    setAuth: (auth: Auth) => void;
     setResponse: (response: ApiResponse | null) => void;
     setLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
@@ -50,6 +52,7 @@ export const useRequestStore = create<RequestState & RequestActions>((set, get) 
 
     return {
         ...init,
+        auth: init.auth ?? { type: 'none' },
         loading: false,
         error: null,
         requestId: 0,
@@ -62,6 +65,7 @@ export const useRequestStore = create<RequestState & RequestActions>((set, get) 
         setBodyType: (bodyType) => set({ bodyType }),
         setBody: (body) => set({ body }),
         setFormBody: (formBody) => set({ formBody }),
+        setAuth: (auth) => set({ auth }),
         setResponse: (response) => {
             const previous = get().response;
             if (previous?.previewUrl && previous.previewUrl !== response?.previewUrl) {
@@ -72,7 +76,12 @@ export const useRequestStore = create<RequestState & RequestActions>((set, get) 
         setLoading: (loading) => set({ loading }),
         setError: (error) => set({ error }),
         initFromSnapshot: (snapshot) => {
-            set({ ...snapshot, loading: false, error: null });
+            set({
+                ...snapshot,
+                auth: snapshot.auth ?? { type: 'none' },
+                loading: false,
+                error: null,
+            });
         },
     };
 });
