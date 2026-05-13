@@ -64,3 +64,15 @@ export interface Tab {
     name?: string;
     snapshot: TabSnapshot;
 }
+
+export interface SavedRequest {
+    id: string;
+    name: string;
+    snapshot: TabSnapshot;
+}
+
+export interface Collection {
+    id: string;
+    name: string;
+    requests: SavedRequest[];
+}

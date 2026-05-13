@@ -19,9 +19,9 @@ function tabLabel(tab: Tab): string {
 }
 
 function captureSnapshot(): TabSnapshot {
-    const { method, url, params, headers, bodyType, body, formBody, response } =
+    const { method, url, params, headers, bodyType, body, formBody, auth, response } =
         useRequestStore.getState();
-    return { method, url, params, headers, bodyType, body, formBody, response };
+    return { method, url, params, headers, bodyType, body, formBody, auth, response };
 }
 
 export function TabBar() {

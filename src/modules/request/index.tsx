@@ -1,22 +1,34 @@
 import { APP_NAME } from '@/core/constants';
 import { Button } from '@/shared/components/ui/button';
 import { useTheme } from '@/shared/lib/theme';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, PanelLeft, Sun } from 'lucide-react';
 import { useEffect } from 'react';
 import { RequestPanel } from './components/RequestPanel';
 import { ResponsePanel } from './components/ResponsePanel';
+import { Sidebar } from './components/Sidebar';
 import { TabBar } from './components/TabBar';
 import { UrlBar } from './components/UrlBar';
 import { useRequestStore } from './store';
+import { useCollectionsStore } from './store/collections';
 import { useTabsStore } from './store/tabs';
 import type { TabSnapshot } from './types';
 
 function TopBar() {
     const { theme, toggle } = useTheme();
+    const { sidebarOpen, toggleSidebar } = useCollectionsStore();
 
     return (
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-(--color-border) shrink-0 bg-(--color-surface-raised)/40">
             <div className="flex items-center gap-2">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleSidebar}
+                    aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+                    className="h-8 w-8 text-muted-foreground hover:text-(--color-text)"
+                >
+                    <PanelLeft className="h-3.5 w-3.5" />
+                </Button>
                 <img
                     src="https://arturbomtempo-dev.github.io/arturbomtempo-cdn/assets/images/projects/reqly/mascot.png"
                     alt={APP_NAME + ' mascot'}
@@ -63,14 +75,17 @@ export function RequestModule() {
     }, []);
 
     return (
-        <div className="flex flex-col h-full min-h-0">
-            <TopBar />
-            <TabBar />
-            <div className="flex-1 flex flex-col gap-3 p-4 min-h-0 overflow-hidden">
-                <UrlBar />
-                <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0">
-                    <RequestPanel />
-                    <ResponsePanel />
+        <div className="flex h-full min-h-0">
+            <Sidebar />
+            <div className="flex flex-col flex-1 min-w-0 min-h-0">
+                <TopBar />
+                <TabBar />
+                <div className="flex-1 flex flex-col gap-3 p-4 min-h-0 overflow-hidden">
+                    <UrlBar />
+                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0">
+                        <RequestPanel />
+                        <ResponsePanel />
+                    </div>
                 </div>
             </div>
         </div>
