@@ -32,10 +32,10 @@ function TopBar() {
                 <img
                     src="https://arturbomtempo-dev.github.io/arturbomtempo-cdn/assets/images/projects/reqly/mascot.png"
                     alt={APP_NAME + ' mascot'}
-                    className="h-7 w-7 object-contain select-none"
+                    className="h-6 w-6 object-contain select-none"
                     draggable={false}
                 />
-                <h1 className="text-lg font-semibold tracking-tight text-(--color-text)">
+                <h1 className="text-md font-semibold tracking-tight text-(--color-text)">
                     {APP_NAME}
                 </h1>
             </div>
