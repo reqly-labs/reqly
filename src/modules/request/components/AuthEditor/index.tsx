@@ -58,11 +58,7 @@ function MaskedInput({
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-(--color-text-subtle) hover:text-(--color-text) transition-colors"
                 aria-label={visible ? 'Hide value' : 'Show value'}
             >
-                {visible ? (
-                    <EyeOff className="h-3.5 w-3.5" />
-                ) : (
-                    <Eye className="h-3.5 w-3.5" />
-                )}
+                {visible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
             </button>
         </div>
     );
