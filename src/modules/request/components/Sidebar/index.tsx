@@ -157,12 +157,26 @@ function InlineEdit({
 function RequestItem({ req, collectionId }: { req: SavedRequest; collectionId: string }) {
     const { renameRequest, removeRequest } = useCollectionsStore();
     const { initFromSnapshot } = useRequestStore();
-    const { addTab, syncActiveTab } = useTabsStore();
+    const { addTab, syncActiveTab, setActiveTab } = useTabsStore();
     const [editing, setEditing] = useState(false);
     const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
     const openRequest = () => {
         if (editing) return;
+        const { tabs, activeTabId } = useTabsStore.getState();
+        const existing = tabs.find(
+            (t) =>
+                t.snapshot.method === req.snapshot.method &&
+                t.snapshot.url.trim() === req.snapshot.url.trim()
+        );
+        if (existing) {
+            if (existing.id !== activeTabId) {
+                syncActiveTab(captureSnapshot());
+                setActiveTab(existing.id);
+                initFromSnapshot(existing.snapshot);
+            }
+            return;
+        }
         const snapshot = captureSnapshot();
         syncActiveTab(snapshot);
         const newId = addTab();
@@ -632,18 +646,32 @@ function RecentSection() {
         const req = collection?.requests.find((r) => r.id === currentDrag!.requestId);
 
         if (req) {
-            const snapshot = captureSnapshot();
-            syncActiveTab(snapshot);
-            const newId = addTab();
-            const newTab = useTabsStore.getState().tabs.find((t) => t.id === newId);
-            if (newTab) {
-                const reqSnapshot = {
-                    ...req.snapshot,
-                    auth: req.snapshot.auth ?? { type: 'none' as const },
-                };
-                initFromSnapshot(reqSnapshot);
-                useTabsStore.getState().syncActiveTab(reqSnapshot);
-                useTabsStore.getState().renameTab(newId, req.name);
+            const { tabs, activeTabId } = useTabsStore.getState();
+            const existing = tabs.find(
+                (t) =>
+                    t.snapshot.method === req.snapshot.method &&
+                    t.snapshot.url.trim() === req.snapshot.url.trim()
+            );
+            if (existing) {
+                if (existing.id !== activeTabId) {
+                    syncActiveTab(captureSnapshot());
+                    useTabsStore.getState().setActiveTab(existing.id);
+                    initFromSnapshot(existing.snapshot);
+                }
+            } else {
+                const snapshot = captureSnapshot();
+                syncActiveTab(snapshot);
+                const newId = addTab();
+                const newTab = useTabsStore.getState().tabs.find((t) => t.id === newId);
+                if (newTab) {
+                    const reqSnapshot = {
+                        ...req.snapshot,
+                        auth: req.snapshot.auth ?? { type: 'none' as const },
+                    };
+                    initFromSnapshot(reqSnapshot);
+                    useTabsStore.getState().syncActiveTab(reqSnapshot);
+                    useTabsStore.getState().renameTab(newId, req.name);
+                }
             }
             removeRequest(currentDrag.sourceCollectionId, currentDrag.requestId);
         }

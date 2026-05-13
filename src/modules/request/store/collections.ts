@@ -28,7 +28,7 @@ interface CollectionsActions {
 
 export const useCollectionsStore = create<CollectionsState & CollectionsActions>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             collections: [],
             expandedIds: [],
             sidebarOpen: false,
@@ -69,6 +69,15 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
             },
 
             addRequest: (collectionId, name, snapshot) => {
+                const existing = get()
+                    .collections.find((c) => c.id === collectionId)
+                    ?.requests.find(
+                        (r) =>
+                            r.snapshot.method === snapshot.method &&
+                            r.snapshot.url.trim() === snapshot.url.trim()
+                    );
+                if (existing) return existing.id;
+
                 const id = uid();
                 const saved: SavedRequest = {
                     id,
@@ -130,6 +139,25 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
                     const source = s.collections.find((c) => c.id === fromCollectionId);
                     const req = source?.requests.find((r) => r.id === requestId);
                     if (!req) return s;
+
+                    const target = s.collections.find((c) => c.id === toCollectionId);
+                    const alreadyExists = target?.requests.some(
+                        (r) =>
+                            r.snapshot.method === req.snapshot.method &&
+                            r.snapshot.url.trim() === req.snapshot.url.trim()
+                    );
+                    if (alreadyExists) {
+                        return {
+                            collections: s.collections.map((c) =>
+                                c.id === fromCollectionId
+                                    ? {
+                                          ...c,
+                                          requests: c.requests.filter((r) => r.id !== requestId),
+                                      }
+                                    : c
+                            ),
+                        };
+                    }
 
                     return {
                         collections: s.collections.map((c) => {
