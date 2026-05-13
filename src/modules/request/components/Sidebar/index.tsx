@@ -15,7 +15,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { useRequestStore } from '../../store';
 import { useCollectionsStore } from '../../store/collections';
-import { useTabsStore } from '../../store/tabs';
+import { defaultSnapshot, useTabsStore } from '../../store/tabs';
 import type { Collection, SavedRequest, Tab, TabSnapshot } from '../../types';
 import { MethodBadge } from '../MethodBadge';
 
@@ -358,22 +358,6 @@ function CollectionItem({ collection, depth = 0 }: { collection: Collection; dep
     const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
     const [dragOver, setDragOver] = useState(false);
 
-    const handleSaveCurrentRequest = () => {
-        const snapshot = captureSnapshot();
-        const url = snapshot.url.trim();
-        let name = 'New Request';
-        if (url) {
-            try {
-                const parsed = new URL(url);
-                name = parsed.pathname === '/' ? parsed.hostname : parsed.pathname;
-            } catch {
-                name = url.length > 24 ? url.slice(0, 24) + '…' : url;
-            }
-        }
-        addRequest(collection.id, name, snapshot);
-        if (!expanded) toggleExpanded(collection.id);
-    };
-
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -515,13 +499,14 @@ function CollectionItem({ collection, depth = 0 }: { collection: Collection; dep
                         type="button"
                         onClick={(e) => {
                             e.stopPropagation();
-                            handleSaveCurrentRequest();
+                            addRequest(collection.id, 'New Request', defaultSnapshot());
+                            if (!expanded) toggleExpanded(collection.id);
                         }}
                         className="flex items-center gap-1.5 pr-2 py-1 w-full text-[11px] text-muted-foreground hover:text-(--color-text) transition-colors cursor-pointer"
                         style={{ paddingLeft: `${28 + depth * 12}px` }}
                     >
                         <Plus className="h-3 w-3" />
-                        Save current request
+                        New request
                     </button>
                 </div>
             )}
@@ -545,9 +530,12 @@ function CollectionItem({ collection, depth = 0 }: { collection: Collection; dep
                             },
                         },
                         {
-                            label: 'Save current request here',
+                            label: 'New request',
                             icon: Plus,
-                            onClick: handleSaveCurrentRequest,
+                            onClick: () => {
+                                addRequest(collection.id, 'New Request', defaultSnapshot());
+                                if (!expanded) toggleExpanded(collection.id);
+                            },
                         },
                         {
                             label: depth === 0 ? 'Delete collection' : 'Delete folder',
@@ -829,9 +817,18 @@ function RecentSection() {
 
 export function Sidebar() {
     const { collections, sidebarOpen } = useCollectionsStore();
+    const { addTab, syncActiveTab } = useTabsStore();
+    const { initFromSnapshot } = useRequestStore();
     const [creating, setCreating] = useState(false);
 
     if (!sidebarOpen) return null;
+
+    const handleNewRequest = () => {
+        syncActiveTab(captureSnapshot());
+        const newId = addTab();
+        const newTab = useTabsStore.getState().tabs.find((t) => t.id === newId);
+        if (newTab) initFromSnapshot(newTab.snapshot);
+    };
 
     return (
         <div className="flex flex-col h-full w-64 shrink-0 border-r border-(--color-border) bg-(--color-surface-raised)/40">
@@ -839,15 +836,26 @@ export function Sidebar() {
                 <span className="text-xs font-semibold text-(--color-text) tracking-wide uppercase">
                     Collections
                 </span>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setCreating(true)}
-                    className="h-6 w-6 text-muted-foreground hover:text-(--color-text)"
-                    aria-label="New collection"
-                >
-                    <FolderPlus className="h-3.5 w-3.5" />
-                </Button>
+                <div className="flex items-center gap-0.5">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleNewRequest}
+                        className="h-6 w-6 text-muted-foreground hover:text-(--color-text)"
+                        aria-label="New request"
+                    >
+                        <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setCreating(true)}
+                        className="h-6 w-6 text-muted-foreground hover:text-(--color-text)"
+                        aria-label="New collection"
+                    >
+                        <FolderPlus className="h-3.5 w-3.5" />
+                    </Button>
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
