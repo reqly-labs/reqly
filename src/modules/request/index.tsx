@@ -58,6 +58,9 @@ function TopBar() {
 
 export function RequestModule() {
     useEffect(() => {
+        let prevMethod = useRequestStore.getState().method;
+        let prevUrl = useRequestStore.getState().url;
+
         return useRequestStore.subscribe((state) => {
             const snapshot: TabSnapshot = {
                 method: state.method,
@@ -71,6 +74,15 @@ export function RequestModule() {
                 response: state.response,
             };
             useTabsStore.getState().syncActiveTab(snapshot);
+
+            if (state.method !== prevMethod && state.url === prevUrl && prevUrl.trim()) {
+                useCollectionsStore
+                    .getState()
+                    .updateRequestByMethodUrl(prevMethod, prevUrl, snapshot);
+            }
+
+            prevMethod = state.method;
+            prevUrl = state.url;
         });
     }, []);
 

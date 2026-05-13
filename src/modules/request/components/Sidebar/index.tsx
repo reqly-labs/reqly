@@ -164,19 +164,36 @@ function RequestItem({ req, collectionId }: { req: SavedRequest; collectionId: s
     const openRequest = () => {
         if (editing) return;
         const { tabs, activeTabId } = useTabsStore.getState();
-        const existing = tabs.find(
+
+        const exactMatch = tabs.find(
             (t) =>
                 t.snapshot.method === req.snapshot.method &&
                 t.snapshot.url.trim() === req.snapshot.url.trim()
         );
-        if (existing) {
-            if (existing.id !== activeTabId) {
+        if (exactMatch) {
+            if (exactMatch.id !== activeTabId) {
                 syncActiveTab(captureSnapshot());
-                setActiveTab(existing.id);
-                initFromSnapshot(existing.snapshot);
+                setActiveTab(exactMatch.id);
+                initFromSnapshot(exactMatch.snapshot);
             }
             return;
         }
+
+        const urlMatch = tabs.find((t) => t.snapshot.url.trim() === req.snapshot.url.trim());
+        if (urlMatch) {
+            const liveSnapshot =
+                urlMatch.id === activeTabId ? captureSnapshot() : urlMatch.snapshot;
+            useCollectionsStore
+                .getState()
+                .updateRequestByMethodUrl(req.snapshot.method, req.snapshot.url, liveSnapshot);
+            if (urlMatch.id !== activeTabId) {
+                syncActiveTab(captureSnapshot());
+                setActiveTab(urlMatch.id);
+                initFromSnapshot(urlMatch.snapshot);
+            }
+            return;
+        }
+
         const snapshot = captureSnapshot();
         syncActiveTab(snapshot);
         const newId = addTab();
