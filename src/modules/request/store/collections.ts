@@ -21,6 +21,7 @@ interface CollectionsActions {
     toggleExpanded: (id: string) => void;
     addRequest: (collectionId: string, name: string, snapshot: TabSnapshot) => string;
     renameRequest: (collectionId: string, requestId: string, name: string) => void;
+    renameRequestByMethodUrl: (method: string, url: string, name: string) => void;
     removeRequest: (collectionId: string, requestId: string) => void;
     updateRequest: (collectionId: string, requestId: string, snapshot: TabSnapshot) => void;
     moveRequest: (fromCollectionId: string, toCollectionId: string, requestId: string) => void;
@@ -104,6 +105,21 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
                               }
                             : c
                     ),
+                }));
+            },
+
+            renameRequestByMethodUrl: (method, url, name) => {
+                const trimmed = name.trim();
+                if (!trimmed) return;
+                set((s) => ({
+                    collections: s.collections.map((c) => ({
+                        ...c,
+                        requests: c.requests.map((r) =>
+                            r.snapshot.method === method && r.snapshot.url.trim() === url.trim()
+                                ? { ...r, name: trimmed }
+                                : r
+                        ),
+                    })),
                 }));
             },
 

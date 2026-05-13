@@ -229,6 +229,15 @@ function RequestItem({ req, collectionId }: { req: SavedRequest; collectionId: s
                         value={req.name}
                         onCommit={(name) => {
                             renameRequest(collectionId, req.id, name);
+                            if (name.trim()) {
+                                useTabsStore
+                                    .getState()
+                                    .renameTabByMethodUrl(
+                                        req.snapshot.method,
+                                        req.snapshot.url,
+                                        name
+                                    );
+                            }
                             setEditing(false);
                         }}
                         onCancel={() => setEditing(false)}
@@ -562,6 +571,15 @@ function TabItem({ tab, isActive }: { tab: Tab; isActive: boolean }) {
                         value={tab.name || tabLabel(tab)}
                         onCommit={(name) => {
                             renameTab(tab.id, name);
+                            if (name.trim()) {
+                                useCollectionsStore
+                                    .getState()
+                                    .renameRequestByMethodUrl(
+                                        tab.snapshot.method,
+                                        tab.snapshot.url,
+                                        name
+                                    );
+                            }
                             setEditing(false);
                         }}
                         onCancel={() => setEditing(false)}

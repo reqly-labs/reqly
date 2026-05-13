@@ -2,6 +2,7 @@ import { cn } from '@/shared/utils/cn';
 import { Plus, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useRequestStore } from '../../store';
+import { useCollectionsStore } from '../../store/collections';
 import { useTabsStore } from '../../store/tabs';
 import type { Tab, TabSnapshot } from '../../types';
 import { MethodBadge } from '../MethodBadge';
@@ -70,7 +71,15 @@ export function TabBar() {
     };
 
     const commitEdit = () => {
-        if (editingId) renameTab(editingId, editingValue);
+        if (editingId) {
+            const tab = tabs.find((t) => t.id === editingId);
+            renameTab(editingId, editingValue);
+            if (tab && editingValue.trim()) {
+                useCollectionsStore
+                    .getState()
+                    .renameRequestByMethodUrl(tab.snapshot.method, tab.snapshot.url, editingValue);
+            }
+        }
         setEditingId(null);
     };
 
