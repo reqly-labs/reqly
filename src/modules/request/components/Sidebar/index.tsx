@@ -53,7 +53,12 @@ function ContextMenu({
     position,
     onClose,
 }: {
-    items: { label: string; icon: React.ComponentType<{ className?: string }>; onClick: () => void; destructive?: boolean }[];
+    items: {
+        label: string;
+        icon: React.ComponentType<{ className?: string }>;
+        onClick: () => void;
+        destructive?: boolean;
+    }[];
     position: { x: number; y: number };
     onClose: () => void;
 }) {
@@ -139,13 +144,7 @@ function InlineEdit({
     );
 }
 
-function RequestItem({
-    req,
-    collectionId,
-}: {
-    req: SavedRequest;
-    collectionId: string;
-}) {
+function RequestItem({ req, collectionId }: { req: SavedRequest; collectionId: string }) {
     const { renameRequest, removeRequest } = useCollectionsStore();
     const { initFromSnapshot } = useRequestStore();
     const { addTab, syncActiveTab } = useTabsStore();
@@ -158,7 +157,10 @@ function RequestItem({
         const newId = addTab();
         const newTab = useTabsStore.getState().tabs.find((t) => t.id === newId);
         if (newTab) {
-            const reqSnapshot = { ...req.snapshot, auth: req.snapshot.auth ?? { type: 'none' as const } };
+            const reqSnapshot = {
+                ...req.snapshot,
+                auth: req.snapshot.auth ?? { type: 'none' as const },
+            };
             initFromSnapshot(reqSnapshot);
             useTabsStore.getState().syncActiveTab(reqSnapshot);
             useTabsStore.getState().renameTab(newId, req.name);
@@ -229,13 +231,8 @@ function RequestItem({
 }
 
 function CollectionItem({ collection }: { collection: Collection }) {
-    const {
-        expandedIds,
-        toggleExpanded,
-        renameCollection,
-        removeCollection,
-        addRequest,
-    } = useCollectionsStore();
+    const { expandedIds, toggleExpanded, renameCollection, removeCollection, addRequest } =
+        useCollectionsStore();
 
     const expanded = expandedIds.includes(collection.id);
     const [editing, setEditing] = useState(false);
@@ -490,9 +487,7 @@ export function Sidebar() {
             <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
                 <RecentSection />
 
-                {collections.length > 0 && (
-                    <div className="h-px bg-(--color-border) mx-1 my-1.5" />
-                )}
+                {collections.length > 0 && <div className="h-px bg-(--color-border) mx-1 my-1.5" />}
 
                 {collections.map((c) => (
                     <CollectionItem key={c.id} collection={c} />
