@@ -6,6 +6,58 @@ function uid(): string {
     return Math.random().toString(36).slice(2);
 }
 
+function mapCollections(
+    collections: Collection[],
+    id: string,
+    updater: (c: Collection) => Collection
+): Collection[] {
+    return collections.map((c) => {
+        if (c.id === id) return updater(c);
+        return { ...c, folders: mapCollections(c.folders ?? [], id, updater) };
+    });
+}
+
+function filterCollections(collections: Collection[], id: string): Collection[] {
+    return collections
+        .filter((c) => c.id !== id)
+        .map((c) => ({ ...c, folders: filterCollections(c.folders ?? [], id) }));
+}
+
+function findCollection(collections: Collection[], id: string): Collection | undefined {
+    for (const c of collections) {
+        if (c.id === id) return c;
+        const found = findCollection(c.folders ?? [], id);
+        if (found) return found;
+    }
+    return undefined;
+}
+
+function deepMapRequests(
+    collections: Collection[],
+    mapper: (r: SavedRequest) => SavedRequest
+): Collection[] {
+    return collections.map((c) => ({
+        ...c,
+        requests: c.requests.map(mapper),
+        folders: deepMapRequests(c.folders ?? [], mapper),
+    }));
+}
+
+function deepClearResponses(c: Collection): Collection {
+    return {
+        ...c,
+        requests: c.requests.map((r) => ({ ...r, snapshot: { ...r.snapshot, response: null } })),
+        folders: (c.folders ?? []).map(deepClearResponses),
+    };
+}
+
+function normalizeCollection(c: Collection): Collection {
+    return {
+        ...c,
+        folders: (c.folders ?? []).map(normalizeCollection),
+    };
+}
+
 interface CollectionsState {
     collections: Collection[];
     expandedIds: string[];
@@ -16,6 +68,7 @@ interface CollectionsActions {
     toggleSidebar: () => void;
     setSidebarOpen: (open: boolean) => void;
     addCollection: (name: string) => string;
+    addFolder: (parentId: string, name: string) => string;
     renameCollection: (id: string, name: string) => void;
     removeCollection: (id: string) => void;
     toggleExpanded: (id: string) => void;
@@ -41,7 +94,19 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
             addCollection: (name) => {
                 const id = uid();
                 set((s) => ({
-                    collections: [...s.collections, { id, name, requests: [] }],
+                    collections: [...s.collections, { id, name, requests: [], folders: [] }],
+                    expandedIds: [...s.expandedIds, id],
+                }));
+                return id;
+            },
+
+            addFolder: (parentId, name) => {
+                const id = uid();
+                set((s) => ({
+                    collections: mapCollections(s.collections, parentId, (c) => ({
+                        ...c,
+                        folders: [...(c.folders ?? []), { id, name, requests: [], folders: [] }],
+                    })),
                     expandedIds: [...s.expandedIds, id],
                 }));
                 return id;
@@ -49,15 +114,16 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
 
             renameCollection: (id, name) => {
                 set((s) => ({
-                    collections: s.collections.map((c) =>
-                        c.id === id ? { ...c, name: name.trim() || c.name } : c
-                    ),
+                    collections: mapCollections(s.collections, id, (c) => ({
+                        ...c,
+                        name: name.trim() || c.name,
+                    })),
                 }));
             },
 
             removeCollection: (id) => {
                 set((s) => ({
-                    collections: s.collections.filter((c) => c.id !== id),
+                    collections: filterCollections(s.collections, id),
                     expandedIds: s.expandedIds.filter((eid) => eid !== id),
                 }));
             },
@@ -71,13 +137,11 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
             },
 
             addRequest: (collectionId, name, snapshot) => {
-                const existing = get()
-                    .collections.find((c) => c.id === collectionId)
-                    ?.requests.find(
-                        (r) =>
-                            r.snapshot.method === snapshot.method &&
-                            r.snapshot.url.trim() === snapshot.url.trim()
-                    );
+                const existing = findCollection(get().collections, collectionId)?.requests.find(
+                    (r) =>
+                        r.snapshot.method === snapshot.method &&
+                        r.snapshot.url.trim() === snapshot.url.trim()
+                );
                 if (existing) return existing.id;
 
                 const id = uid();
@@ -87,25 +151,22 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
                     snapshot: { ...snapshot, response: null },
                 };
                 set((s) => ({
-                    collections: s.collections.map((c) =>
-                        c.id === collectionId ? { ...c, requests: [...c.requests, saved] } : c
-                    ),
+                    collections: mapCollections(s.collections, collectionId, (c) => ({
+                        ...c,
+                        requests: [...c.requests, saved],
+                    })),
                 }));
                 return id;
             },
 
             renameRequest: (collectionId, requestId, name) => {
                 set((s) => ({
-                    collections: s.collections.map((c) =>
-                        c.id === collectionId
-                            ? {
-                                  ...c,
-                                  requests: c.requests.map((r) =>
-                                      r.id === requestId ? { ...r, name: name.trim() || r.name } : r
-                                  ),
-                              }
-                            : c
-                    ),
+                    collections: mapCollections(s.collections, collectionId, (c) => ({
+                        ...c,
+                        requests: c.requests.map((r) =>
+                            r.id === requestId ? { ...r, name: name.trim() || r.name } : r
+                        ),
+                    })),
                 }));
             },
 
@@ -113,50 +174,29 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
                 const trimmed = name.trim();
                 if (!trimmed) return;
                 set((s) => ({
-                    collections: s.collections.map((c) => ({
-                        ...c,
-                        requests: c.requests.map((r) =>
-                            r.snapshot.method === method && r.snapshot.url.trim() === url.trim()
-                                ? { ...r, name: trimmed }
-                                : r
-                        ),
-                    })),
+                    collections: deepMapRequests(s.collections, (r) =>
+                        r.snapshot.method === method && r.snapshot.url.trim() === url.trim()
+                            ? { ...r, name: trimmed }
+                            : r
+                    ),
                 }));
             },
 
             removeRequest: (collectionId, requestId) => {
                 set((s) => ({
-                    collections: s.collections.map((c) =>
-                        c.id === collectionId
-                            ? { ...c, requests: c.requests.filter((r) => r.id !== requestId) }
-                            : c
-                    ),
+                    collections: mapCollections(s.collections, collectionId, (c) => ({
+                        ...c,
+                        requests: c.requests.filter((r) => r.id !== requestId),
+                    })),
                 }));
             },
 
             updateRequest: (collectionId, requestId, snapshot) => {
                 set((s) => ({
-                    collections: s.collections.map((c) =>
-                        c.id === collectionId
-                            ? {
-                                  ...c,
-                                  requests: c.requests.map((r) =>
-                                      r.id === requestId
-                                          ? { ...r, snapshot: { ...snapshot, response: null } }
-                                          : r
-                                  ),
-                              }
-                            : c
-                    ),
-                }));
-            },
-
-            updateRequestByMethodUrl: (method, url, snapshot) => {
-                set((s) => ({
-                    collections: s.collections.map((c) => ({
+                    collections: mapCollections(s.collections, collectionId, (c) => ({
                         ...c,
                         requests: c.requests.map((r) =>
-                            r.snapshot.method === method && r.snapshot.url.trim() === url.trim()
+                            r.id === requestId
                                 ? { ...r, snapshot: { ...snapshot, response: null } }
                                 : r
                         ),
@@ -164,61 +204,57 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
                 }));
             },
 
+            updateRequestByMethodUrl: (method, url, snapshot) => {
+                set((s) => ({
+                    collections: deepMapRequests(s.collections, (r) =>
+                        r.snapshot.method === method && r.snapshot.url.trim() === url.trim()
+                            ? { ...r, snapshot: { ...snapshot, response: null } }
+                            : r
+                    ),
+                }));
+            },
+
             moveRequest: (fromCollectionId, toCollectionId, requestId) => {
                 set((s) => {
-                    const source = s.collections.find((c) => c.id === fromCollectionId);
-                    const req = source?.requests.find((r) => r.id === requestId);
+                    const from = findCollection(s.collections, fromCollectionId);
+                    const req = from?.requests.find((r) => r.id === requestId);
                     if (!req) return s;
 
-                    const target = s.collections.find((c) => c.id === toCollectionId);
-                    const alreadyExists = target?.requests.some(
+                    const to = findCollection(s.collections, toCollectionId);
+                    const alreadyExists = to?.requests.some(
                         (r) =>
                             r.snapshot.method === req.snapshot.method &&
                             r.snapshot.url.trim() === req.snapshot.url.trim()
                     );
-                    if (alreadyExists) {
-                        return {
-                            collections: s.collections.map((c) =>
-                                c.id === fromCollectionId
-                                    ? {
-                                          ...c,
-                                          requests: c.requests.filter((r) => r.id !== requestId),
-                                      }
-                                    : c
-                            ),
-                        };
+
+                    let updated = mapCollections(s.collections, fromCollectionId, (c) => ({
+                        ...c,
+                        requests: c.requests.filter((r) => r.id !== requestId),
+                    }));
+
+                    if (!alreadyExists) {
+                        updated = mapCollections(updated, toCollectionId, (c) => ({
+                            ...c,
+                            requests: [...c.requests, req],
+                        }));
                     }
 
-                    return {
-                        collections: s.collections.map((c) => {
-                            if (c.id === fromCollectionId) {
-                                return {
-                                    ...c,
-                                    requests: c.requests.filter((r) => r.id !== requestId),
-                                };
-                            }
-                            if (c.id === toCollectionId) {
-                                return { ...c, requests: [...c.requests, req] };
-                            }
-                            return c;
-                        }),
-                    };
+                    return { collections: updated };
                 });
             },
         }),
         {
             name: 'reqly:collections',
             partialize: (state) => ({
-                collections: state.collections.map((c) => ({
-                    ...c,
-                    requests: c.requests.map((r) => ({
-                        ...r,
-                        snapshot: { ...r.snapshot, response: null },
-                    })),
-                })),
+                collections: state.collections.map(deepClearResponses),
                 expandedIds: state.expandedIds,
                 sidebarOpen: state.sidebarOpen,
             }),
+            onRehydrateStorage: () => (state) => {
+                if (state) {
+                    state.collections = state.collections.map(normalizeCollection);
+                }
+            },
         }
     )
 );

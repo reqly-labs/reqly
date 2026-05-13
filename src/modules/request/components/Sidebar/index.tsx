@@ -154,7 +154,15 @@ function InlineEdit({
     );
 }
 
-function RequestItem({ req, collectionId }: { req: SavedRequest; collectionId: string }) {
+function RequestItem({
+    req,
+    collectionId,
+    depth = 0,
+}: {
+    req: SavedRequest;
+    collectionId: string;
+    depth?: number;
+}) {
     const { renameRequest, removeRequest } = useCollectionsStore();
     const { initFromSnapshot } = useRequestStore();
     const { addTab, syncActiveTab, setActiveTab } = useTabsStore();
@@ -237,7 +245,8 @@ function RequestItem({ req, collectionId }: { req: SavedRequest; collectionId: s
                 draggable
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
-                className="group flex items-center gap-2 pl-3 pr-2 py-1 cursor-pointer hover:bg-(--color-surface-hover) rounded-sm transition-colors"
+                className="group flex items-center gap-2 pr-2 py-1 cursor-pointer hover:bg-(--color-surface-hover) rounded-sm transition-colors"
+                style={{ paddingLeft: `${16 + depth * 12}px` }}
             >
                 <GripVertical className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-40 cursor-grab text-muted-foreground" />
                 <MethodBadge method={req.snapshot.method} className="text-[9px] shrink-0" />
@@ -299,18 +308,53 @@ function RequestItem({ req, collectionId }: { req: SavedRequest; collectionId: s
     );
 }
 
-function CollectionItem({ collection }: { collection: Collection }) {
+function NewFolderInput({ depth, onDone }: { depth: number; onDone: (name: string) => void }) {
+    const [name, setName] = useState('');
+    const ref = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        ref.current?.focus();
+    }, []);
+
+    const commit = () => onDone(name.trim());
+
+    return (
+        <div
+            className="flex items-center gap-1.5 py-1 pr-2"
+            style={{ paddingLeft: `${8 + depth * 12}px` }}
+        >
+            <ChevronRight className="h-3 w-3 shrink-0 opacity-0" />
+            <FolderOpen className="h-3.5 w-3.5 shrink-0 text-(--color-primary)/70" />
+            <Input
+                ref={ref}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') commit();
+                    if (e.key === 'Escape') onDone('');
+                }}
+                placeholder="Folder name"
+                className="h-6 text-xs border-0 border-b border-(--color-primary) rounded-none bg-transparent shadow-none focus-visible:ring-0 px-0"
+            />
+        </div>
+    );
+}
+
+function CollectionItem({ collection, depth = 0 }: { collection: Collection; depth?: number }) {
     const {
         expandedIds,
         toggleExpanded,
         renameCollection,
         removeCollection,
+        addFolder,
         addRequest,
         moveRequest,
     } = useCollectionsStore();
 
     const expanded = expandedIds.includes(collection.id);
     const [editing, setEditing] = useState(false);
+    const [creatingFolder, setCreatingFolder] = useState(false);
     const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
     const [dragOver, setDragOver] = useState(false);
 
@@ -392,8 +436,9 @@ function CollectionItem({ collection }: { collection: Collection }) {
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
+                style={{ paddingLeft: `${8 + depth * 12}px` }}
                 className={cn(
-                    'group flex items-center gap-1.5 px-2 py-1.5 cursor-pointer hover:bg-(--color-surface-hover) rounded-sm transition-colors',
+                    'group flex items-center gap-1.5 pr-2 py-1.5 cursor-pointer hover:bg-(--color-surface-hover) rounded-sm transition-colors',
                     dragOver && 'ring-2 ring-(--color-primary)/50 bg-(--color-primary)/5'
                 )}
             >
@@ -419,7 +464,7 @@ function CollectionItem({ collection }: { collection: Collection }) {
                     </span>
                 )}
                 <span className="ml-auto text-[10px] font-mono text-muted-foreground tabular-nums shrink-0">
-                    {collection.requests.length}
+                    {collection.requests.length + (collection.folders?.length ?? 0)}
                 </span>
                 <button
                     type="button"
@@ -435,22 +480,45 @@ function CollectionItem({ collection }: { collection: Collection }) {
             </div>
 
             {expanded && (
-                <div className="ml-1">
-                    {collection.requests.length === 0 && (
-                        <p className="pl-7 py-2 text-[11px] text-(--color-text-subtle)">
-                            No requests yet
-                        </p>
-                    )}
+                <div>
+                    {collection.requests.length === 0 &&
+                        (collection.folders?.length ?? 0) === 0 &&
+                        !creatingFolder && (
+                            <p
+                                className="py-2 text-[11px] text-(--color-text-subtle)"
+                                style={{ paddingLeft: `${28 + depth * 12}px` }}
+                            >
+                                No requests yet
+                            </p>
+                        )}
                     {collection.requests.map((req) => (
-                        <RequestItem key={req.id} req={req} collectionId={collection.id} />
+                        <RequestItem
+                            key={req.id}
+                            req={req}
+                            collectionId={collection.id}
+                            depth={depth}
+                        />
                     ))}
+                    {(collection.folders ?? []).map((f) => (
+                        <CollectionItem key={f.id} collection={f} depth={depth + 1} />
+                    ))}
+                    {creatingFolder && (
+                        <NewFolderInput
+                            depth={depth + 1}
+                            onDone={(name) => {
+                                if (name) addFolder(collection.id, name);
+                                setCreatingFolder(false);
+                            }}
+                        />
+                    )}
                     <button
                         type="button"
                         onClick={(e) => {
                             e.stopPropagation();
                             handleSaveCurrentRequest();
                         }}
-                        className="flex items-center gap-1.5 pl-7 pr-2 py-1 w-full text-[11px] text-muted-foreground hover:text-(--color-text) transition-colors cursor-pointer"
+                        className="flex items-center gap-1.5 pr-2 py-1 w-full text-[11px] text-muted-foreground hover:text-(--color-text) transition-colors cursor-pointer"
+                        style={{ paddingLeft: `${28 + depth * 12}px` }}
                     >
                         <Plus className="h-3 w-3" />
                         Save current request
@@ -469,12 +537,20 @@ function CollectionItem({ collection }: { collection: Collection }) {
                             onClick: () => setEditing(true),
                         },
                         {
+                            label: 'New folder',
+                            icon: FolderPlus,
+                            onClick: () => {
+                                if (!expanded) toggleExpanded(collection.id);
+                                setCreatingFolder(true);
+                            },
+                        },
+                        {
                             label: 'Save current request here',
                             icon: Plus,
                             onClick: handleSaveCurrentRequest,
                         },
                         {
-                            label: 'Delete collection',
+                            label: depth === 0 ? 'Delete collection' : 'Delete folder',
                             icon: Trash2,
                             onClick: () => removeCollection(collection.id),
                             destructive: true,

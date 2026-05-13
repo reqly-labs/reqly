@@ -75,4 +75,5 @@ export interface Collection {
     id: string;
     name: string;
     requests: SavedRequest[];
+    folders: Collection[];
 }
