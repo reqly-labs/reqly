@@ -201,3 +201,97 @@ export function parseCurlCommand(input: string): ParsedCurl | null {
         data: dataParts.length > 0 ? dataParts.join('&') : undefined,
     };
 }
+
+function shellEscape(value: string): string {
+    if (/^[a-zA-Z0-9._\-/:@=&?%+~#]+$/.test(value)) return value;
+    return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+interface BuildCurlOptions {
+    method: string;
+    url: string;
+    params: { key: string; value: string; enabled: boolean }[];
+    headers: { key: string; value: string; enabled: boolean }[];
+    bodyType: string;
+    body: string;
+    formBody: { key: string; value: string; enabled: boolean }[];
+    auth: import('../types').Auth;
+}
+
+export function buildCurlCommand(opts: BuildCurlOptions): string {
+    const parts: string[] = ['curl'];
+
+    if (opts.method !== 'GET') {
+        parts.push('-X', opts.method);
+    }
+
+    const targetUrl = new URL(opts.url.trim());
+    opts.params
+        .filter((p) => p.enabled && p.key)
+        .forEach((p) => targetUrl.searchParams.append(p.key, p.value));
+
+    if (opts.auth.type === 'api-key' && opts.auth.addTo === 'query' && opts.auth.key) {
+        targetUrl.searchParams.append(opts.auth.key, opts.auth.value);
+    }
+
+    parts.push(shellEscape(targetUrl.toString()));
+
+    const reqHeaders: { key: string; value: string }[] = [];
+
+    opts.headers
+        .filter((h) => h.enabled && h.key)
+        .forEach((h) => reqHeaders.push({ key: h.key, value: h.value }));
+
+    if (opts.auth.type === 'bearer' && opts.auth.token) {
+        const prefix = opts.auth.prefix || 'Bearer';
+        reqHeaders.push({ key: 'Authorization', value: `${prefix} ${opts.auth.token}` });
+    } else if (opts.auth.type === 'basic' && (opts.auth.username || opts.auth.password)) {
+        const encoded = btoa(`${opts.auth.username}:${opts.auth.password}`);
+        reqHeaders.push({ key: 'Authorization', value: `Basic ${encoded}` });
+    } else if (opts.auth.type === 'api-key' && opts.auth.addTo === 'header' && opts.auth.key) {
+        reqHeaders.push({ key: opts.auth.key, value: opts.auth.value });
+    }
+
+    let reqData: string | undefined;
+
+    if (opts.method !== 'GET' && opts.bodyType !== 'none') {
+        if (opts.bodyType === 'json') {
+            reqData = opts.body;
+            if (!reqHeaders.some((h) => h.key.toLowerCase() === 'content-type')) {
+                reqHeaders.push({ key: 'Content-Type', value: 'application/json' });
+            }
+        } else if (opts.bodyType === 'xml') {
+            reqData = opts.body;
+            if (!reqHeaders.some((h) => h.key.toLowerCase() === 'content-type')) {
+                reqHeaders.push({ key: 'Content-Type', value: 'application/xml' });
+            }
+        } else if (opts.bodyType === 'text') {
+            reqData = opts.body;
+            if (!reqHeaders.some((h) => h.key.toLowerCase() === 'content-type')) {
+                reqHeaders.push({ key: 'Content-Type', value: 'text/plain' });
+            }
+        } else if (opts.bodyType === 'form') {
+            const fd = new URLSearchParams();
+            opts.formBody
+                .filter((f) => f.enabled && f.key)
+                .forEach((f) => fd.append(f.key, f.value));
+            reqData = fd.toString();
+            if (!reqHeaders.some((h) => h.key.toLowerCase() === 'content-type')) {
+                reqHeaders.push({
+                    key: 'Content-Type',
+                    value: 'application/x-www-form-urlencoded',
+                });
+            }
+        }
+    }
+
+    reqHeaders.forEach((h) => {
+        parts.push('-H', shellEscape(`${h.key}: ${h.value}`));
+    });
+
+    if (reqData) {
+        parts.push('-d', shellEscape(reqData));
+    }
+
+    return parts.join(' \\\n  ');
+}
