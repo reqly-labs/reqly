@@ -76,7 +76,7 @@ export function RequestModule() {
             };
             useTabsStore.getState().syncActiveTab(snapshot);
 
-            if (state.method !== prevMethod && state.url === prevUrl && prevUrl.trim()) {
+            if ((state.method !== prevMethod || state.url !== prevUrl) && prevUrl.trim()) {
                 useCollectionsStore
                     .getState()
                     .updateRequestByMethodUrl(prevMethod, prevUrl, snapshot);

@@ -63,6 +63,7 @@ interface RequestActions {
     setError: (error: string | null) => void;
     nextRequest: () => void;
     initFromSnapshot: (snapshot: TabSnapshot) => void;
+    patch: (partial: Partial<RequestState>) => void;
 }
 
 function getInitialSnapshot(): TabSnapshot {
@@ -112,6 +113,7 @@ export const useRequestStore = create<RequestState & RequestActions>((set, get) 
                 error: null,
             });
         },
+        patch: (partial) => set(partial),
     };
 });
 

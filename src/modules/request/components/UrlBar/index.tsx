@@ -46,35 +46,26 @@ function inferBodyType(contentType: string, body: string): BodyType {
 }
 
 export function UrlBar() {
-    const {
-        method,
-        url,
-        loading,
-        setMethod,
-        setUrl,
-        setHeaders,
-        setBodyType,
-        setBody,
-        setFormBody,
-        setMultipartBody,
-        setMultipartFiles,
-    } = useRequestStore();
+    const { method, url, loading, setMethod, setUrl, patch } = useRequestStore();
     const { send } = useRequest();
 
     const applyCurlIfNeeded = (value: string): boolean => {
         const parsed = parseCurlCommand(value);
         if (!parsed) return false;
 
-        setMethod(parsed.method);
-        setUrl(parsed.url);
-        setHeaders(toKVItems(parsed.headers));
+        const headers = toKVItems(parsed.headers);
 
         if (parsed.multipartFields && parsed.multipartFields.length > 0) {
-            setBodyType('multipart');
-            setBody('');
-            setFormBody([newKV()]);
-            setMultipartBody(parsed.multipartFields);
-            setMultipartFiles({});
+            patch({
+                method: parsed.method,
+                url: parsed.url,
+                headers,
+                bodyType: 'multipart',
+                body: '',
+                formBody: [newKV()],
+                multipartBody: parsed.multipartFields,
+                multipartFiles: {},
+            });
             return true;
         }
 
@@ -84,9 +75,7 @@ export function UrlBar() {
         const nextBody = parsed.data ?? '';
         const nextBodyType = inferBodyType(contentType, nextBody);
 
-        setBodyType(nextBodyType);
-        setBody(nextBodyType === 'form' ? '' : nextBody);
-
+        let formBody: KV[] = [newKV()];
         if (nextBodyType === 'form' && nextBody) {
             const params = new URLSearchParams(nextBody);
             const formItems: KV[] = [];
@@ -98,10 +87,17 @@ export function UrlBar() {
                     enabled: true,
                 });
             });
-            setFormBody(formItems.length > 0 ? formItems : [newKV()]);
-        } else {
-            setFormBody([newKV()]);
+            if (formItems.length > 0) formBody = formItems;
         }
+
+        patch({
+            method: parsed.method,
+            url: parsed.url,
+            headers,
+            bodyType: nextBodyType,
+            body: nextBodyType === 'form' ? '' : nextBody,
+            formBody,
+        });
 
         return true;
     };
