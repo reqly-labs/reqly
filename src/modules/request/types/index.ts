@@ -11,6 +11,14 @@ export interface KV {
     enabled: boolean;
 }
 
+export interface FormDataField {
+    id: string;
+    key: string;
+    value: string;
+    type: 'text' | 'file';
+    enabled: boolean;
+}
+
 export interface AuthNone {
     type: 'none';
 }
@@ -55,6 +63,7 @@ export interface TabSnapshot {
     bodyType: BodyType;
     body: string;
     formBody: KV[];
+    multipartBody: FormDataField[];
     auth: Auth;
     response: ApiResponse | null;
 }

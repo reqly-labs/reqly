@@ -70,6 +70,7 @@ export function RequestModule() {
                 bodyType: state.bodyType,
                 body: state.body,
                 formBody: state.formBody,
+                multipartBody: state.multipartBody,
                 auth: state.auth,
                 response: state.response,
             };

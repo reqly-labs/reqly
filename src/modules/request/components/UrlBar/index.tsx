@@ -56,6 +56,8 @@ export function UrlBar() {
         setBodyType,
         setBody,
         setFormBody,
+        setMultipartBody,
+        setMultipartFiles,
     } = useRequestStore();
     const { send } = useRequest();
 
@@ -66,6 +68,15 @@ export function UrlBar() {
         setMethod(parsed.method);
         setUrl(parsed.url);
         setHeaders(toKVItems(parsed.headers));
+
+        if (parsed.multipartFields && parsed.multipartFields.length > 0) {
+            setBodyType('multipart');
+            setBody('');
+            setFormBody([newKV()]);
+            setMultipartBody(parsed.multipartFields);
+            setMultipartFiles({});
+            return true;
+        }
 
         const contentType =
             Object.entries(parsed.headers).find(([k]) => k.toLowerCase() === 'content-type')?.[1] ??

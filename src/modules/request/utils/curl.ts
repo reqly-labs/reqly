@@ -1,10 +1,12 @@
 import { HTTP_METHODS } from '@/core/constants';
+import type { FormDataField } from '../types';
 
 export interface ParsedCurl {
     method: (typeof HTTP_METHODS)[number];
     url: string;
     headers: Record<string, string>;
     data?: string;
+    multipartFields?: FormDataField[];
 }
 
 function tokenizeCurl(input: string): string[] {
@@ -106,6 +108,7 @@ export function parseCurlCommand(input: string): ParsedCurl | null {
     let url = '';
     const headers: Record<string, string> = {};
     const dataParts: string[] = [];
+    const formParts: string[] = [];
 
     for (let i = 1; i < tokens.length; i += 1) {
         const token = tokens[i];
@@ -183,6 +186,25 @@ export function parseCurlCommand(input: string): ParsedCurl | null {
             continue;
         }
 
+        if (token === '-F' || token === '--form') {
+            const value = nextValue(tokens, i);
+            if (value !== null) {
+                formParts.push(value);
+                i += 1;
+            }
+            continue;
+        }
+
+        if (token.startsWith('-F') && token.length > 2) {
+            formParts.push(token.slice(2));
+            continue;
+        }
+
+        if (token.startsWith('--form=')) {
+            formParts.push(token.slice('--form='.length));
+            continue;
+        }
+
         if (!token.startsWith('-') && !url && /^https?:\/\//i.test(token)) {
             url = token;
         }
@@ -192,6 +214,42 @@ export function parseCurlCommand(input: string): ParsedCurl | null {
 
     if (dataParts.length > 0 && method.toUpperCase() === 'GET') {
         method = 'POST';
+    }
+
+    if (formParts.length > 0 && method.toUpperCase() === 'GET') {
+        method = 'POST';
+    }
+
+    if (formParts.length > 0) {
+        const multipartFields: FormDataField[] = formParts.map((part) => {
+            const eqIdx = part.indexOf('=');
+            if (eqIdx <= 0) {
+                return {
+                    id: Math.random().toString(36).slice(2),
+                    key: part,
+                    value: '',
+                    type: 'text',
+                    enabled: true,
+                };
+            }
+            const key = part.slice(0, eqIdx);
+            const raw = part.slice(eqIdx + 1);
+            const isFile = raw.startsWith('@');
+            return {
+                id: Math.random().toString(36).slice(2),
+                key,
+                value: isFile ? raw.slice(1) : raw,
+                type: isFile ? 'file' : 'text',
+                enabled: true,
+            };
+        });
+
+        return {
+            method: normalizeMethod(method),
+            url,
+            headers,
+            multipartFields,
+        };
     }
 
     return {
@@ -215,6 +273,7 @@ interface BuildCurlOptions {
     bodyType: string;
     body: string;
     formBody: { key: string; value: string; enabled: boolean }[];
+    multipartBody: { key: string; value: string; type: 'text' | 'file'; enabled: boolean }[];
     auth: import('../types').Auth;
 }
 
@@ -291,6 +350,15 @@ export function buildCurlCommand(opts: BuildCurlOptions): string {
 
     if (reqData) {
         parts.push('-d', shellEscape(reqData));
+    }
+
+    if (opts.bodyType === 'multipart' && opts.method !== 'GET') {
+        opts.multipartBody
+            .filter((f) => f.enabled && f.key)
+            .forEach((f) => {
+                const val = f.type === 'file' ? `@${f.value || 'path/to/file'}` : f.value;
+                parts.push('-F', shellEscape(`${f.key}=${val}`));
+            });
     }
 
     return parts.join(' \\\n  ');

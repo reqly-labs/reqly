@@ -1,12 +1,22 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { KV, Tab, TabSnapshot } from '../types';
+import type { FormDataField, KV, Tab, TabSnapshot } from '../types';
 
 function newKV(): KV {
     return {
         id: Math.random().toString(36).slice(2),
         key: '',
         value: '',
+        enabled: true,
+    };
+}
+
+function newFormDataField(): FormDataField {
+    return {
+        id: Math.random().toString(36).slice(2),
+        key: '',
+        value: '',
+        type: 'text',
         enabled: true,
     };
 }
@@ -20,6 +30,7 @@ export function defaultSnapshot(): TabSnapshot {
         bodyType: 'json',
         body: '',
         formBody: [newKV()],
+        multipartBody: [newFormDataField()],
         auth: { type: 'none' },
         response: null,
     };

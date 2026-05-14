@@ -11,7 +11,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { useRequestStore } from '../../store';
 import type { BodyType } from '../../types';
 import { AuthEditor } from '../AuthEditor';
+import { FormDataEditor } from '../FormDataEditor';
 import { KeyValueEditor } from '../KeyValueEditor';
+
+const BODY_TYPE_LABELS: Record<(typeof BODY_TYPES)[number], string> = {
+    none: 'None',
+    json: 'JSON',
+    text: 'Text',
+    xml: 'XML',
+    form: 'URL Encoded',
+    multipart: 'Form Data',
+};
 
 export function RequestPanel() {
     const {
@@ -20,12 +30,16 @@ export function RequestPanel() {
         bodyType,
         body,
         formBody,
+        multipartBody,
+        multipartFiles,
         auth,
         setParams,
         setHeaders,
         setBodyType,
         setBody,
         setFormBody,
+        setMultipartBody,
+        setMultipartFiles,
     } = useRequestStore();
 
     const enabledParamsCount = params.filter((p) => p.enabled && p.key).length;
@@ -95,8 +109,8 @@ export function RequestPanel() {
                         </SelectTrigger>
                         <SelectContent>
                             {BODY_TYPES.map((b) => (
-                                <SelectItem key={b} value={b} className="text-xs capitalize">
-                                    {b === 'form' ? 'form-urlencoded' : b}
+                                <SelectItem key={b} value={b} className="text-xs">
+                                    {BODY_TYPE_LABELS[b]}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -119,6 +133,15 @@ export function RequestPanel() {
 
                     {bodyType === 'form' && (
                         <KeyValueEditor items={formBody} onChange={setFormBody} />
+                    )}
+
+                    {bodyType === 'multipart' && (
+                        <FormDataEditor
+                            items={multipartBody}
+                            onChange={setMultipartBody}
+                            files={multipartFiles}
+                            onFilesChange={setMultipartFiles}
+                        />
                     )}
                 </TabsContent>
 

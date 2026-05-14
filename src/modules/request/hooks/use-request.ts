@@ -70,7 +70,7 @@ export function useRequest() {
                 }
             }
 
-            let reqData: string | undefined;
+            let reqData: string | FormData | undefined;
 
             if (method !== 'GET' && bodyType !== 'none') {
                 if (bodyType === 'json') {
@@ -89,6 +89,20 @@ export function useRequest() {
                         .forEach((f) => fd.append(f.key, f.value));
                     reqData = fd.toString();
                     reqHeaders['Content-Type'] ??= 'application/x-www-form-urlencoded';
+                } else if (bodyType === 'multipart') {
+                    const { multipartBody, multipartFiles } = useRequestStore.getState();
+                    const fd = new FormData();
+                    multipartBody
+                        .filter((f) => f.enabled && f.key)
+                        .forEach((f) => {
+                            if (f.type === 'file') {
+                                const file = multipartFiles[f.id];
+                                if (file) fd.append(f.key, file, file.name);
+                            } else {
+                                fd.append(f.key, f.value);
+                            }
+                        });
+                    reqData = fd;
                 }
             }
 
