@@ -9,6 +9,7 @@ import { Sidebar } from './components/Sidebar';
 import { TabBar } from './components/TabBar';
 import { UrlBar } from './components/UrlBar';
 import { useRequestStore } from './store';
+import { _skipCollectionSync, _resetSkipCollectionSync } from './store';
 import { useCollectionsStore } from './store/collections';
 import { useTabsStore } from './store/tabs';
 import type { TabSnapshot } from './types';
@@ -75,6 +76,13 @@ export function RequestModule() {
                 response: state.response,
             };
             useTabsStore.getState().syncActiveTab(snapshot);
+
+            if (_skipCollectionSync) {
+                _resetSkipCollectionSync();
+                prevMethod = state.method;
+                prevUrl = state.url;
+                return;
+            }
 
             if ((state.method !== prevMethod || state.url !== prevUrl) && prevUrl.trim()) {
                 useCollectionsStore

@@ -58,7 +58,7 @@ export function TabBar() {
     const handleTabClick = (id: string) => {
         if (id === activeTabId || editingId === id) return;
         syncActiveTab(captureSnapshot());
-        const target = tabs.find((t) => t.id === id);
+        const target = useTabsStore.getState().tabs.find((t) => t.id === id);
         if (target) {
             setActiveTab(id);
             initFromSnapshot(target.snapshot);

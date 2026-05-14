@@ -238,8 +238,9 @@ function RequestItem({
         if (exactMatch) {
             if (exactMatch.id !== activeTabId) {
                 syncActiveTab(captureSnapshot());
+                const fresh = useTabsStore.getState().tabs.find((t) => t.id === exactMatch.id);
                 setActiveTab(exactMatch.id);
-                initFromSnapshot(exactMatch.snapshot);
+                initFromSnapshot(fresh?.snapshot ?? exactMatch.snapshot);
             }
             return;
         }
@@ -253,8 +254,9 @@ function RequestItem({
                 .updateRequestByMethodUrl(req.snapshot.method, req.snapshot.url, liveSnapshot);
             if (urlMatch.id !== activeTabId) {
                 syncActiveTab(captureSnapshot());
+                const fresh = useTabsStore.getState().tabs.find((t) => t.id === urlMatch.id);
                 setActiveTab(urlMatch.id);
-                initFromSnapshot(urlMatch.snapshot);
+                initFromSnapshot(fresh?.snapshot ?? urlMatch.snapshot);
             }
             return;
         }
@@ -650,8 +652,11 @@ function TabItem({ tab, isActive }: { tab: Tab; isActive: boolean }) {
         if (isActive || editing) return;
         const snapshot = captureSnapshot();
         syncActiveTab(snapshot);
-        setActiveTab(tab.id);
-        initFromSnapshot(tab.snapshot);
+        const freshTab = useTabsStore.getState().tabs.find((t) => t.id === tab.id);
+        if (freshTab) {
+            setActiveTab(tab.id);
+            initFromSnapshot(freshTab.snapshot);
+        }
     };
 
     const handleContextMenu = (e: React.MouseEvent) => {
