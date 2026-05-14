@@ -29,9 +29,46 @@ interface DragPayload {
 let currentDrag: DragPayload | null = null;
 
 function captureSnapshot(): TabSnapshot {
-    const { method, url, params, headers, bodyType, body, formBody, auth, response } =
-        useRequestStore.getState();
-    return { method, url, params, headers, bodyType, body, formBody, auth, response };
+    const {
+        method,
+        url,
+        params,
+        headers,
+        bodyType,
+        body,
+        formBody,
+        multipartBody,
+        auth,
+        response,
+    } = useRequestStore.getState();
+    return {
+        method,
+        url,
+        params,
+        headers,
+        bodyType,
+        body,
+        formBody,
+        multipartBody,
+        auth,
+        response,
+    };
+}
+
+function isTabInAnyCollection(tab: Tab, collections: Collection[]): boolean {
+    for (const col of collections) {
+        if (
+            col.requests.some(
+                (r) =>
+                    r.snapshot.method === tab.snapshot.method &&
+                    r.snapshot.url.trim() === tab.snapshot.url.trim() &&
+                    r.snapshot.url.trim() !== ''
+            )
+        )
+            return true;
+        if (isTabInAnyCollection(tab, col.folders ?? [])) return true;
+    }
+    return false;
 }
 
 function requestLabel(req: SavedRequest): string {
@@ -165,9 +202,29 @@ function RequestItem({
 }) {
     const { renameRequest, removeRequest } = useCollectionsStore();
     const { initFromSnapshot } = useRequestStore();
-    const { addTab, syncActiveTab, setActiveTab } = useTabsStore();
+    const { addTab, syncActiveTab, setActiveTab, closeTab } = useTabsStore();
     const [editing, setEditing] = useState(false);
     const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+
+    const handleDelete = () => {
+        const { tabs, activeTabId } = useTabsStore.getState();
+        const matchingTab = tabs.find(
+            (t) =>
+                t.snapshot.method === req.snapshot.method &&
+                t.snapshot.url.trim() === req.snapshot.url.trim()
+        );
+        removeRequest(collectionId, req.id);
+        if (matchingTab && tabs.length > 1) {
+            if (matchingTab.id === activeTabId) {
+                syncActiveTab(captureSnapshot());
+            }
+            const newActiveId = closeTab(matchingTab.id);
+            if (newActiveId) {
+                const newActive = useTabsStore.getState().tabs.find((t) => t.id === newActiveId);
+                if (newActive) initFromSnapshot(newActive.snapshot);
+            }
+        }
+    };
 
     const openRequest = () => {
         if (editing) return;
@@ -298,7 +355,7 @@ function RequestItem({
                         {
                             label: 'Delete',
                             icon: Trash2,
-                            onClick: () => removeRequest(collectionId, req.id),
+                            onClick: handleDelete,
                             destructive: true,
                         },
                     ]}
@@ -718,10 +775,14 @@ function TabItem({ tab, isActive }: { tab: Tab; isActive: boolean }) {
 
 function RecentSection() {
     const { tabs, activeTabId } = useTabsStore();
-    const { removeRequest } = useCollectionsStore();
+    const { collections, removeRequest } = useCollectionsStore();
     const { initFromSnapshot } = useRequestStore();
     const { addTab, syncActiveTab } = useTabsStore();
     const [expanded, setExpanded] = useState(true);
+
+    const visibleTabs = tabs.filter(
+        (tab) => !isTabInAnyCollection(tab, collections) || tab.id === activeTabId
+    );
     const [dragOver, setDragOver] = useState(false);
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -801,12 +862,12 @@ function RecentSection() {
                     Recent
                 </span>
                 <span className="ml-auto text-[10px] font-mono text-muted-foreground tabular-nums shrink-0">
-                    {tabs.length}
+                    {visibleTabs.length}
                 </span>
             </div>
             {expanded && (
                 <div className="ml-1">
-                    {tabs.map((tab) => (
+                    {visibleTabs.map((tab) => (
                         <TabItem key={tab.id} tab={tab} isActive={tab.id === activeTabId} />
                     ))}
                 </div>

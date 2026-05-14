@@ -116,3 +116,54 @@ export const useRequestStore = create<RequestState & RequestActions>((set, get) 
 });
 
 export { newFormDataField, newKV };
+
+let _prevMethod = '';
+let _prevUrl = '';
+let _prevParams: unknown = null;
+let _prevHeaders: unknown = null;
+let _prevBodyType = '';
+let _prevBody = '';
+let _prevFormBody: unknown = null;
+let _prevMultipartBody: unknown = null;
+let _prevAuth: unknown = null;
+let _prevResponse: unknown = null;
+
+useRequestStore.subscribe((state) => {
+    if (
+        state.method === _prevMethod &&
+        state.url === _prevUrl &&
+        state.params === _prevParams &&
+        state.headers === _prevHeaders &&
+        state.bodyType === _prevBodyType &&
+        state.body === _prevBody &&
+        state.formBody === _prevFormBody &&
+        state.multipartBody === _prevMultipartBody &&
+        state.auth === _prevAuth &&
+        state.response === _prevResponse
+    )
+        return;
+
+    _prevMethod = state.method;
+    _prevUrl = state.url;
+    _prevParams = state.params;
+    _prevHeaders = state.headers;
+    _prevBodyType = state.bodyType;
+    _prevBody = state.body;
+    _prevFormBody = state.formBody;
+    _prevMultipartBody = state.multipartBody;
+    _prevAuth = state.auth;
+    _prevResponse = state.response;
+
+    useTabsStore.getState().syncActiveTab({
+        method: state.method,
+        url: state.url,
+        params: state.params,
+        headers: state.headers,
+        bodyType: state.bodyType,
+        body: state.body,
+        formBody: state.formBody,
+        multipartBody: state.multipartBody,
+        auth: state.auth,
+        response: state.response,
+    });
+});
