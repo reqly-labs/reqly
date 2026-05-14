@@ -137,12 +137,14 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
             },
 
             addRequest: (collectionId, name, snapshot) => {
-                const existing = findCollection(get().collections, collectionId)?.requests.find(
-                    (r) =>
-                        r.snapshot.method === snapshot.method &&
-                        r.snapshot.url.trim() === snapshot.url.trim()
-                );
-                if (existing) return existing.id;
+                if (snapshot.url.trim()) {
+                    const existing = findCollection(get().collections, collectionId)?.requests.find(
+                        (r) =>
+                            r.snapshot.method === snapshot.method &&
+                            r.snapshot.url.trim() === snapshot.url.trim()
+                    );
+                    if (existing) return existing.id;
+                }
 
                 const id = uid();
                 const saved: SavedRequest = {

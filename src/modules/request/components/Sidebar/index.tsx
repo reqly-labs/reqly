@@ -780,9 +780,7 @@ function RecentSection() {
     const { addTab, syncActiveTab } = useTabsStore();
     const [expanded, setExpanded] = useState(true);
 
-    const visibleTabs = tabs.filter(
-        (tab) => !isTabInAnyCollection(tab, collections) || tab.id === activeTabId
-    );
+    const visibleTabs = tabs.filter((tab) => !isTabInAnyCollection(tab, collections));
     const [dragOver, setDragOver] = useState(false);
 
     const handleDragOver = (e: React.DragEvent) => {
