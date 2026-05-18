@@ -71,6 +71,8 @@ export interface TabSnapshot {
 export interface Tab {
     id: string;
     name?: string;
+    savedRequestId?: string;
+    collectionId?: string;
     snapshot: TabSnapshot;
 }
 

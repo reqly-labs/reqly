@@ -96,9 +96,19 @@ export function TabBar() {
             const tab = tabs.find((t) => t.id === editingId);
             renameTab(editingId, editingValue);
             if (tab && editingValue.trim()) {
-                useCollectionsStore
-                    .getState()
-                    .renameRequestByMethodUrl(tab.snapshot.method, tab.snapshot.url, editingValue);
+                if (tab.savedRequestId && tab.collectionId) {
+                    useCollectionsStore
+                        .getState()
+                        .renameRequest(tab.collectionId, tab.savedRequestId, editingValue);
+                } else {
+                    useCollectionsStore
+                        .getState()
+                        .renameRequestByMethodUrl(
+                            tab.snapshot.method,
+                            tab.snapshot.url,
+                            editingValue
+                        );
+                }
             }
         }
         setEditingId(null);
@@ -141,19 +151,17 @@ export function TabBar() {
                         ) : (
                             <span className="truncate min-w-0">{tabLabel(tab)}</span>
                         )}
-                        {tabs.length > 1 && (
-                            <button
-                                onClick={(e) => handleClose(e, tab.id)}
-                                className={cn(
-                                    'ml-auto shrink-0 rounded p-0.5 transition-colors duration-(--transition-fast)',
-                                    'opacity-0 group-hover:opacity-100',
-                                    isActive && 'opacity-60',
-                                    'hover:opacity-100 hover:bg-(--color-surface-raised) text-muted-foreground hover:text-(--color-text)'
-                                )}
-                            >
-                                <X className="h-3 w-3" />
-                            </button>
-                        )}
+                        <button
+                            onClick={(e) => handleClose(e, tab.id)}
+                            className={cn(
+                                'ml-auto shrink-0 rounded p-0.5 transition-colors duration-(--transition-fast)',
+                                'opacity-0 group-hover:opacity-100',
+                                isActive && 'opacity-60',
+                                'hover:opacity-100 hover:bg-(--color-surface-raised) text-muted-foreground hover:text-(--color-text)'
+                            )}
+                        >
+                            <X className="h-3 w-3" />
+                        </button>
                     </div>
                 );
             })}

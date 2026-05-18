@@ -55,6 +55,8 @@ interface TabsActions {
     syncActiveTab: (snapshot: TabSnapshot) => void;
     renameTab: (id: string, name: string) => void;
     renameTabByMethodUrl: (method: string, url: string, name: string) => void;
+    linkTab: (tabId: string, savedRequestId: string, collectionId: string) => void;
+    findTabByRequestId: (savedRequestId: string) => Tab | undefined;
 }
 
 const initialTab = newTab();
@@ -73,7 +75,12 @@ export const useTabsStore = create<TabsState & TabsActions>()(
 
             closeTab: (id) => {
                 const { tabs, activeTabId } = get();
-                if (tabs.length === 1) return null;
+
+                if (tabs.length === 1) {
+                    const fresh = newTab();
+                    set({ tabs: [fresh], activeTabId: fresh.id });
+                    return fresh.id;
+                }
 
                 const idx = tabs.findIndex((t) => t.id === id);
                 const neighbour = tabs[idx === 0 ? 1 : idx - 1];
@@ -112,6 +119,24 @@ export const useTabsStore = create<TabsState & TabsActions>()(
                             : t
                     ),
                 }));
+            },
+
+            linkTab: (tabId, savedRequestId, collectionId) => {
+                set((s) => ({
+                    tabs: s.tabs.map((t) =>
+                        t.id === tabId
+                            ? {
+                                  ...t,
+                                  savedRequestId: savedRequestId || undefined,
+                                  collectionId: collectionId || undefined,
+                              }
+                            : t
+                    ),
+                }));
+            },
+
+            findTabByRequestId: (savedRequestId) => {
+                return get().tabs.find((t) => t.savedRequestId === savedRequestId);
             },
         }),
         {

@@ -56,6 +56,7 @@ function captureSnapshot(): TabSnapshot {
 }
 
 function isTabInAnyCollection(tab: Tab, collections: Collection[]): boolean {
+    if (tab.savedRequestId) return true;
     for (const col of collections) {
         if (
             col.requests.some(
@@ -208,13 +209,9 @@ function RequestItem({
 
     const handleDelete = () => {
         const { tabs, activeTabId } = useTabsStore.getState();
-        const matchingTab = tabs.find(
-            (t) =>
-                t.snapshot.method === req.snapshot.method &&
-                t.snapshot.url.trim() === req.snapshot.url.trim()
-        );
+        const matchingTab = tabs.find((t) => t.savedRequestId === req.id);
         removeRequest(collectionId, req.id);
-        if (matchingTab && tabs.length > 1) {
+        if (matchingTab) {
             if (matchingTab.id === activeTabId) {
                 syncActiveTab(captureSnapshot());
             }
@@ -230,50 +227,38 @@ function RequestItem({
         if (editing) return;
         const { tabs, activeTabId } = useTabsStore.getState();
 
-        const exactMatch = tabs.find(
-            (t) =>
-                t.snapshot.method === req.snapshot.method &&
-                t.snapshot.url.trim() === req.snapshot.url.trim()
-        );
-        if (exactMatch) {
-            if (exactMatch.id !== activeTabId) {
+        const linkedTab = tabs.find((t) => t.savedRequestId === req.id);
+        if (linkedTab) {
+            if (linkedTab.id !== activeTabId) {
                 syncActiveTab(captureSnapshot());
-                const fresh = useTabsStore.getState().tabs.find((t) => t.id === exactMatch.id);
-                setActiveTab(exactMatch.id);
-                initFromSnapshot(fresh?.snapshot ?? exactMatch.snapshot);
-            }
-            return;
-        }
-
-        const urlMatch = tabs.find((t) => t.snapshot.url.trim() === req.snapshot.url.trim());
-        if (urlMatch) {
-            const liveSnapshot =
-                urlMatch.id === activeTabId ? captureSnapshot() : urlMatch.snapshot;
-            useCollectionsStore
-                .getState()
-                .updateRequestByMethodUrl(req.snapshot.method, req.snapshot.url, liveSnapshot);
-            if (urlMatch.id !== activeTabId) {
-                syncActiveTab(captureSnapshot());
-                const fresh = useTabsStore.getState().tabs.find((t) => t.id === urlMatch.id);
-                setActiveTab(urlMatch.id);
-                initFromSnapshot(fresh?.snapshot ?? urlMatch.snapshot);
+                const fresh = useTabsStore.getState().tabs.find((t) => t.id === linkedTab.id);
+                setActiveTab(linkedTab.id);
+                initFromSnapshot(fresh?.snapshot ?? linkedTab.snapshot);
             }
             return;
         }
 
         const snapshot = captureSnapshot();
         syncActiveTab(snapshot);
-        const newId = addTab();
-        const newTab = useTabsStore.getState().tabs.find((t) => t.id === newId);
-        if (newTab) {
-            const reqSnapshot = {
-                ...req.snapshot,
-                auth: req.snapshot.auth ?? { type: 'none' as const },
-            };
-            initFromSnapshot(reqSnapshot);
-            useTabsStore.getState().syncActiveTab(reqSnapshot);
-            useTabsStore.getState().renameTab(newId, req.name);
+
+        const activeTab = tabs.find((t) => t.id === activeTabId);
+        const activeIsEmpty = !activeTab?.savedRequestId && !activeTab?.snapshot.url.trim();
+
+        let targetTabId: string;
+        if (activeIsEmpty) {
+            targetTabId = activeTabId;
+        } else {
+            targetTabId = addTab();
         }
+
+        const reqSnapshot = {
+            ...req.snapshot,
+            auth: req.snapshot.auth ?? { type: 'none' as const },
+        };
+        initFromSnapshot(reqSnapshot);
+        useTabsStore.getState().syncActiveTab(reqSnapshot);
+        useTabsStore.getState().renameTab(targetTabId, req.name);
+        useTabsStore.getState().linkTab(targetTabId, req.id, collectionId);
     };
 
     const handleContextMenu = (e: React.MouseEvent) => {
@@ -315,13 +300,20 @@ function RequestItem({
                         onCommit={(name) => {
                             renameRequest(collectionId, req.id, name);
                             if (name.trim()) {
-                                useTabsStore
+                                const linkedTab = useTabsStore
                                     .getState()
-                                    .renameTabByMethodUrl(
-                                        req.snapshot.method,
-                                        req.snapshot.url,
-                                        name
-                                    );
+                                    .findTabByRequestId(req.id);
+                                if (linkedTab) {
+                                    useTabsStore.getState().renameTab(linkedTab.id, name);
+                                } else {
+                                    useTabsStore
+                                        .getState()
+                                        .renameTabByMethodUrl(
+                                            req.snapshot.method,
+                                            req.snapshot.url,
+                                            name
+                                        );
+                                }
                             }
                             setEditing(false);
                         }}
@@ -456,7 +448,8 @@ function CollectionItem({ collection, depth = 0 }: { collection: Collection; dep
                         name = url.length > 24 ? url.slice(0, 24) + '…' : url;
                     }
                 }
-                addRequest(collection.id, name, snapshot);
+                const requestId = addRequest(collection.id, name, snapshot);
+                useTabsStore.getState().linkTab(tab.id, requestId, collection.id);
                 if (!expanded) toggleExpanded(collection.id);
             }
         } else if (
@@ -465,6 +458,12 @@ function CollectionItem({ collection, depth = 0 }: { collection: Collection; dep
             currentDrag.sourceCollectionId
         ) {
             moveRequest(currentDrag.sourceCollectionId, collection.id, currentDrag.requestId);
+            const linkedTab = useTabsStore
+                .getState()
+                .tabs.find((t) => t.savedRequestId === currentDrag!.requestId);
+            if (linkedTab) {
+                useTabsStore.getState().linkTab(linkedTab.id, currentDrag.requestId, collection.id);
+            }
             if (!expanded) toggleExpanded(collection.id);
         }
 
@@ -676,8 +675,6 @@ function TabItem({ tab, isActive }: { tab: Tab; isActive: boolean }) {
     };
 
     const handleClose = () => {
-        const tabs = useTabsStore.getState().tabs;
-        if (tabs.length <= 1) return;
         if (tab.id === useTabsStore.getState().activeTabId) {
             syncActiveTab(captureSnapshot());
         }
@@ -714,14 +711,10 @@ function TabItem({ tab, isActive }: { tab: Tab; isActive: boolean }) {
                         value={tab.name || tabLabel(tab)}
                         onCommit={(name) => {
                             renameTab(tab.id, name);
-                            if (name.trim()) {
+                            if (name.trim() && tab.savedRequestId && tab.collectionId) {
                                 useCollectionsStore
                                     .getState()
-                                    .renameRequestByMethodUrl(
-                                        tab.snapshot.method,
-                                        tab.snapshot.url,
-                                        name
-                                    );
+                                    .renameRequest(tab.collectionId, tab.savedRequestId, name);
                             }
                             setEditing(false);
                         }}
@@ -761,16 +754,12 @@ function TabItem({ tab, isActive }: { tab: Tab; isActive: boolean }) {
                             icon: Pencil,
                             onClick: () => setEditing(true),
                         },
-                        ...(useTabsStore.getState().tabs.length > 1
-                            ? [
-                                  {
-                                      label: 'Close',
-                                      icon: Trash2,
-                                      onClick: handleClose,
-                                      destructive: true,
-                                  },
-                              ]
-                            : []),
+                        {
+                            label: 'Close',
+                            icon: Trash2,
+                            onClick: handleClose,
+                            destructive: true,
+                        },
                     ]}
                 />
             )}
@@ -810,12 +799,9 @@ function RecentSection() {
 
         if (req) {
             const { tabs, activeTabId } = useTabsStore.getState();
-            const existing = tabs.find(
-                (t) =>
-                    t.snapshot.method === req.snapshot.method &&
-                    t.snapshot.url.trim() === req.snapshot.url.trim()
-            );
+            const existing = tabs.find((t) => t.savedRequestId === req.id);
             if (existing) {
+                useTabsStore.getState().linkTab(existing.id, '', '');
                 if (existing.id !== activeTabId) {
                     syncActiveTab(captureSnapshot());
                     useTabsStore.getState().setActiveTab(existing.id);
@@ -825,16 +811,13 @@ function RecentSection() {
                 const snapshot = captureSnapshot();
                 syncActiveTab(snapshot);
                 const newId = addTab();
-                const newTab = useTabsStore.getState().tabs.find((t) => t.id === newId);
-                if (newTab) {
-                    const reqSnapshot = {
-                        ...req.snapshot,
-                        auth: req.snapshot.auth ?? { type: 'none' as const },
-                    };
-                    initFromSnapshot(reqSnapshot);
-                    useTabsStore.getState().syncActiveTab(reqSnapshot);
-                    useTabsStore.getState().renameTab(newId, req.name);
-                }
+                const reqSnapshot = {
+                    ...req.snapshot,
+                    auth: req.snapshot.auth ?? { type: 'none' as const },
+                };
+                initFromSnapshot(reqSnapshot);
+                useTabsStore.getState().syncActiveTab(reqSnapshot);
+                useTabsStore.getState().renameTab(newId, req.name);
             }
             removeRequest(currentDrag.sourceCollectionId, currentDrag.requestId);
         }

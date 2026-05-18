@@ -8,8 +8,7 @@ import { ResponsePanel } from './components/ResponsePanel';
 import { Sidebar } from './components/Sidebar';
 import { TabBar } from './components/TabBar';
 import { UrlBar } from './components/UrlBar';
-import { useRequestStore } from './store';
-import { _skipCollectionSync, _resetSkipCollectionSync } from './store';
+import { _resetSkipCollectionSync, _skipCollectionSync, useRequestStore } from './store';
 import { useCollectionsStore } from './store/collections';
 import { useTabsStore } from './store/tabs';
 import type { TabSnapshot } from './types';
@@ -84,7 +83,14 @@ export function RequestModule() {
                 return;
             }
 
-            if ((state.method !== prevMethod || state.url !== prevUrl) && prevUrl.trim()) {
+            const { tabs, activeTabId } = useTabsStore.getState();
+            const activeTab = tabs.find((t) => t.id === activeTabId);
+
+            if (activeTab?.savedRequestId && activeTab?.collectionId) {
+                useCollectionsStore
+                    .getState()
+                    .updateRequest(activeTab.collectionId, activeTab.savedRequestId, snapshot);
+            } else if ((state.method !== prevMethod || state.url !== prevUrl) && prevUrl.trim()) {
                 useCollectionsStore
                     .getState()
                     .updateRequestByMethodUrl(prevMethod, prevUrl, snapshot);
