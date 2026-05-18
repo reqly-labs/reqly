@@ -8,6 +8,7 @@ import { ResponsePanel } from './components/ResponsePanel';
 import { Sidebar } from './components/Sidebar';
 import { TabBar } from './components/TabBar';
 import { UrlBar } from './components/UrlBar';
+import { UserMenu } from './components/UserMenu';
 import { _resetSkipCollectionSync, _skipCollectionSync, useRequestStore } from './store';
 import { useCollectionsStore } from './store/collections';
 import { useTabsStore } from './store/tabs';
@@ -39,19 +40,22 @@ function TopBar() {
                     {APP_NAME}
                 </h1>
             </div>
-            <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggle}
-                aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-                className="h-8 w-8 text-muted-foreground hover:text-(--color-text)"
-            >
-                {theme === 'dark' ? (
-                    <Sun className="h-3.5 w-3.5" />
-                ) : (
-                    <Moon className="h-3.5 w-3.5" />
-                )}
-            </Button>
+            <div className="flex items-center gap-1">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggle}
+                    aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                    className="h-8 w-8 text-muted-foreground hover:text-(--color-text)"
+                >
+                    {theme === 'dark' ? (
+                        <Sun className="h-3.5 w-3.5" />
+                    ) : (
+                        <Moon className="h-3.5 w-3.5" />
+                    )}
+                </Button>
+                <UserMenu />
+            </div>
         </div>
     );
 }

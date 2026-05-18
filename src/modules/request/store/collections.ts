@@ -79,6 +79,7 @@ interface CollectionsActions {
     updateRequest: (collectionId: string, requestId: string, snapshot: TabSnapshot) => void;
     updateRequestByMethodUrl: (method: string, url: string, snapshot: TabSnapshot) => void;
     moveRequest: (fromCollectionId: string, toCollectionId: string, requestId: string) => void;
+    clearCollections: () => void;
 }
 
 export const useCollectionsStore = create<CollectionsState & CollectionsActions>()(
@@ -214,6 +215,10 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
                             : r
                     ),
                 }));
+            },
+
+            clearCollections: () => {
+                set({ collections: [], expandedIds: [] });
             },
 
             moveRequest: (fromCollectionId, toCollectionId, requestId) => {
