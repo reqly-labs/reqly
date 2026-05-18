@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from 'react';
 export function UserMenu() {
     const { user, loading, signInWithGoogle, signInWithGitHub, signOut } = useAuth();
     const [open, setOpen] = useState(false);
-    const [signingIn, setSigningIn] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -20,28 +19,14 @@ export function UserMenu() {
 
     if (loading) return null;
 
-    const handleGoogle = async () => {
-        setSigningIn(true);
-        try {
-            await signInWithGoogle();
-            setOpen(false);
-        } catch {
-            /* user cancelled */
-        } finally {
-            setSigningIn(false);
-        }
+    const handleGoogle = () => {
+        signInWithGoogle();
+        setOpen(false);
     };
 
-    const handleGitHub = async () => {
-        setSigningIn(true);
-        try {
-            await signInWithGitHub();
-            setOpen(false);
-        } catch {
-            /* user cancelled */
-        } finally {
-            setSigningIn(false);
-        }
+    const handleGitHub = () => {
+        signInWithGitHub();
+        setOpen(false);
     };
 
     if (user) {
@@ -53,8 +38,8 @@ export function UserMenu() {
                     aria-label="User menu"
                 >
                     <img
-                        src={user.photoURL ?? undefined}
-                        alt={user.displayName ?? 'User'}
+                        src={user.picture ?? undefined}
+                        alt={user.name ?? 'User'}
                         className="h-full w-full object-cover"
                         referrerPolicy="no-referrer"
                     />
@@ -64,7 +49,7 @@ export function UserMenu() {
                     <div className="absolute right-0 top-full mt-1.5 w-52 rounded-lg border border-(--color-border) bg-(--color-surface-raised) shadow-lg py-1 z-50">
                         <div className="px-3 py-2 border-b border-(--color-border)">
                             <p className="text-xs font-medium text-(--color-text) truncate">
-                                {user.displayName}
+                                {user.name}
                             </p>
                             <p className="text-[11px] text-muted-foreground truncate">
                                 {user.email}
@@ -105,16 +90,14 @@ export function UserMenu() {
                     </p>
                     <button
                         onClick={handleGoogle}
-                        disabled={signingIn}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-(--color-text) hover:bg-(--color-surface)/60 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-(--color-text) hover:bg-(--color-surface)/60 transition-colors cursor-pointer"
                     >
                         <GoogleIcon className="h-3.5 w-3.5" />
                         Continue with Google
                     </button>
                     <button
                         onClick={handleGitHub}
-                        disabled={signingIn}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-(--color-text) hover:bg-(--color-surface)/60 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-(--color-text) hover:bg-(--color-surface)/60 transition-colors cursor-pointer"
                     >
                         <Github className="h-3.5 w-3.5" />
                         Continue with GitHub

@@ -1,13 +1,8 @@
 import { useAuth } from '@/core/auth';
-import {
-    fetchCloudCollections,
-    saveCollectionsToCloud,
-    subscribeToCloudCollections,
-} from '@/core/sync';
+import { fetchCloudCollections, saveCollectionsToCloud } from '@/core/sync';
 import { useCollectionsStore } from '@/modules/request/store/collections';
 import { useTabsStore } from '@/modules/request/store/tabs';
 import type { Collection } from '@/modules/request/types';
-import type { Unsubscribe } from 'firebase/firestore';
 import { useEffect, useRef, type ReactNode } from 'react';
 
 let _isSyncingFromCloud = false;
@@ -18,22 +13,16 @@ export function isSyncingFromCloud() {
 
 export function SyncProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
-    const unsubRef = useRef<Unsubscribe | null>(null);
-    const prevUserRef = useRef<string | null>(null);
+    const prevUidRef = useRef<string | null>(null);
 
     useEffect(() => {
         const currentUid = user?.uid ?? null;
-        const prevUid = prevUserRef.current;
+        const prevUid = prevUidRef.current;
 
         if (currentUid === prevUid) return;
-        prevUserRef.current = currentUid;
+        prevUidRef.current = currentUid;
 
-        if (unsubRef.current) {
-            unsubRef.current();
-            unsubRef.current = null;
-        }
-
-        if (!currentUid || !user) {
+        if (!currentUid) {
             useCollectionsStore.getState().clearCollections();
             useTabsStore.getState().clearTabs();
             return;
@@ -41,7 +30,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
         (async () => {
             const localCollections = useCollectionsStore.getState().collections;
-            const cloudCollections = await fetchCloudCollections(currentUid);
+            const cloudCollections = await fetchCloudCollections();
 
             const merged = mergeCollections(cloudCollections, localCollections);
 
@@ -49,21 +38,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
             useCollectionsStore.setState({ collections: merged });
             _isSyncingFromCloud = false;
 
-            await saveCollectionsToCloud(currentUid, merged);
-
-            unsubRef.current = subscribeToCloudCollections(user, (cloudData) => {
-                _isSyncingFromCloud = true;
-                useCollectionsStore.setState({ collections: cloudData });
-                _isSyncingFromCloud = false;
-            });
+            await saveCollectionsToCloud(merged);
         })();
-
-        return () => {
-            if (unsubRef.current) {
-                unsubRef.current();
-                unsubRef.current = null;
-            }
-        };
     }, [user]);
 
     useEffect(() => {
@@ -72,7 +48,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         const unsub = useCollectionsStore.subscribe((state, prevState) => {
             if (_isSyncingFromCloud) return;
             if (state.collections === prevState.collections) return;
-            saveCollectionsToCloud(user.uid, state.collections);
+            saveCollectionsToCloud(state.collections);
         });
 
         return unsub;
