@@ -1,17 +1,12 @@
-import type { NextFunction, Request, Response } from "express";
-import { AppError } from "../shared/errors.js";
+import type { NextFunction, Request, Response } from 'express';
+import { AppError } from '../shared/errors.js';
 
-export function errorHandler(
-  err: Error,
-  _req: Request,
-  res: Response,
-  _next: NextFunction,
-): void {
-  if (err instanceof AppError) {
-    res.status(err.statusCode).json({ error: err.message });
-    return;
-  }
+export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
+    if (err instanceof AppError) {
+        res.status(err.statusCode).json({ error: err.message });
+        return;
+    }
 
-  console.error("[unhandled]", err);
-  res.status(500).json({ error: "Internal server error" });
+    console.error('[unhandled]', err);
+    res.status(500).json({ error: 'Internal server error' });
 }
