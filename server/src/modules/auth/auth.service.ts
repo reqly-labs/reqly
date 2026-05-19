@@ -132,11 +132,9 @@ export function generateToken(userInfo: OAuthUserInfo): TokenResponse {
 }
 
 function getServerBaseUrl(): string {
-  const clientUrl = env().CLIENT_URL;
-  if (env().NODE_ENV === "production") {
-    return process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : clientUrl.replace(/:\d+$/, ":3001");
+  if (env().SERVER_URL) return env().SERVER_URL as string;
+  if (env().NODE_ENV === "production" && process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
   }
   return `http://localhost:${env().PORT}`;
 }
