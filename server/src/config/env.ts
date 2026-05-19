@@ -10,6 +10,8 @@ const schema = z.object({
     GOOGLE_CLIENT_SECRET: z.string().min(1),
     GITHUB_CLIENT_ID: z.string().min(1),
     GITHUB_CLIENT_SECRET: z.string().min(1),
+    GITHUB_CLIENT_ID_DEV: z.string().min(1).optional(),
+    GITHUB_CLIENT_SECRET_DEV: z.string().min(1).optional(),
     FIREBASE_PROJECT_ID: z.string().min(1),
     FIREBASE_CLIENT_EMAIL: z.string().email(),
     FIREBASE_PRIVATE_KEY: z.string().min(1),

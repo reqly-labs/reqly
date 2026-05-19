@@ -15,8 +15,9 @@ export function buildGoogleAuthUrl(state: string): string {
 }
 
 export function buildGitHubAuthUrl(state: string): string {
+    const { clientId } = getGitHubCredentials();
     const params = new URLSearchParams({
-        client_id: env().GITHUB_CLIENT_ID,
+        client_id: clientId,
         redirect_uri: getGitHubCallbackUrl(),
         scope: 'read:user user:email',
         state,
@@ -60,12 +61,13 @@ export async function exchangeGoogleCode(code: string): Promise<OAuthUserInfo> {
 }
 
 export async function exchangeGitHubCode(code: string): Promise<OAuthUserInfo> {
+    const { clientId, clientSecret } = getGitHubCredentials();
     const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
         method: 'POST',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            client_id: env().GITHUB_CLIENT_ID,
-            client_secret: env().GITHUB_CLIENT_SECRET,
+            client_id: clientId,
+            client_secret: clientSecret,
             code,
             redirect_uri: getGitHubCallbackUrl(),
         }),
@@ -143,4 +145,19 @@ function getGoogleCallbackUrl(): string {
 
 function getGitHubCallbackUrl(): string {
     return `${getServerBaseUrl()}/auth/github/callback`;
+}
+
+function getGitHubCredentials(): { clientId: string; clientSecret: string } {
+    const config = env();
+    if (
+        config.NODE_ENV === 'development' &&
+        config.GITHUB_CLIENT_ID_DEV &&
+        config.GITHUB_CLIENT_SECRET_DEV
+    ) {
+        return {
+            clientId: config.GITHUB_CLIENT_ID_DEV,
+            clientSecret: config.GITHUB_CLIENT_SECRET_DEV,
+        };
+    }
+    return { clientId: config.GITHUB_CLIENT_ID, clientSecret: config.GITHUB_CLIENT_SECRET };
 }
