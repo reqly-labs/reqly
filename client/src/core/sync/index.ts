@@ -3,6 +3,10 @@ import { getToken } from '../auth';
 
 const API_URL = import.meta.env.VITE_API_URL as string;
 
+if (!API_URL) {
+    throw new Error('VITE_API_URL is not defined. Check your .env file.');
+}
+
 function authHeaders(): HeadersInit {
     const token = getToken();
     return token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : {};

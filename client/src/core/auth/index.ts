@@ -2,6 +2,11 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { storageGet, storageRemove, storageSet } from '../storage';
 
 const API_URL = import.meta.env.VITE_API_URL as string;
+
+if (!API_URL) {
+    throw new Error('VITE_API_URL is not defined. Check your .env file.');
+}
+
 const TOKEN_KEY = 'reqly:token';
 
 export interface AuthUser {
