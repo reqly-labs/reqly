@@ -14,6 +14,11 @@ const limiter = rateLimit({
     limit: 30,
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: (req) => {
+        const forwarded = req.headers['x-forwarded-for'];
+        if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
+        return req.ip ?? 'unknown';
+    },
     message: { error: 'Too many requests, please try again later' },
 });
 

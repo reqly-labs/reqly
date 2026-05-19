@@ -8,7 +8,8 @@ import { router } from './routes/index.js';
 
 const app = express();
 
-app.use(helmet({ contentSecurityPolicy: false }));
+app.set('trust proxy', 1);
+app.use(helmet({ contentSecurityPolicy: false, crossOriginOpenerPolicy: false }));
 app.use(
     cors({
         origin: env().CLIENT_URL,
