@@ -31,7 +31,7 @@ function buildPostMessageHtml(data: object): { html: string; nonce: string } {
         .replace(/</g, '\\u003c')
         .replace(/>/g, '\\u003e')
         .replace(/&/g, '\\u0026');
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><script nonce="${nonce}">if(window.opener){window.opener.postMessage(${json},"${env().CLIENT_URL}");}window.close();<\/script></body></html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><script nonce="${nonce}">if(window.opener){window.opener.postMessage(${json},"*");}window.close();<\/script></body></html>`;
     return { html, nonce };
 }
 
