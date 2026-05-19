@@ -2,13 +2,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import type { Request, Response } from 'express';
 import { env } from '../../config/env.js';
 import { AppError } from '../../shared/errors.js';
-import {
-    buildGitHubAuthUrl,
-    buildGoogleAuthUrl,
-    exchangeGitHubCode,
-    exchangeGoogleCode,
-    generateToken,
-} from './auth.service.js';
+import { buildGoogleAuthUrl, exchangeGoogleCode, generateToken } from './auth.service.js';
 import type { OAuthUserInfo } from './auth.types.js';
 
 function generateState(): string {
@@ -49,12 +43,6 @@ export function redirectToGoogle(_req: Request, res: Response): void {
     res.redirect(buildGoogleAuthUrl(state));
 }
 
-export function redirectToGitHub(_req: Request, res: Response): void {
-    const state = generateState();
-    res.cookie('oauth_state_github', state, stateCookieOptions());
-    res.redirect(buildGitHubAuthUrl(state));
-}
-
 export async function handleGoogleCallback(req: Request, res: Response): Promise<void> {
     const { code, state } = req.query as { code?: string; state?: string };
     const storedState = req.cookies?.['oauth_state_google'] as string | undefined;
@@ -73,27 +61,6 @@ export async function handleGoogleCallback(req: Request, res: Response): Promise
         sendAuthResponse(res, userInfo);
     } catch {
         sendPostMessage(res, { error: 'Google authentication failed' });
-    }
-}
-
-export async function handleGitHubCallback(req: Request, res: Response): Promise<void> {
-    const { code, state } = req.query as { code?: string; state?: string };
-    const storedState = req.cookies?.['oauth_state_github'] as string | undefined;
-
-    res.clearCookie('oauth_state_github', { path: '/auth' });
-
-    if (!code || !state || !storedState || state !== storedState) {
-        sendPostMessage(res, {
-            error: 'Invalid state or missing authorization code',
-        });
-        return;
-    }
-
-    try {
-        const userInfo = await exchangeGitHubCode(code);
-        sendAuthResponse(res, userInfo);
-    } catch {
-        sendPostMessage(res, { error: 'GitHub authentication failed' });
     }
 }
 

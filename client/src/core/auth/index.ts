@@ -21,7 +21,6 @@ export interface AuthState {
     user: AuthUser | null;
     loading: boolean;
     signInWithGoogle: () => void;
-    signInWithGitHub: () => void;
     signOut: () => void;
 }
 
@@ -29,7 +28,6 @@ export const AuthContext = createContext<AuthState>({
     user: null,
     loading: true,
     signInWithGoogle: () => {},
-    signInWithGitHub: () => {},
     signOut: () => {},
 });
 
@@ -83,14 +81,10 @@ export function useAuthState() {
         window.open(`${API_URL}/auth/google`, 'auth', 'popup,width=500,height=600');
     };
 
-    const signInWithGitHub = () => {
-        window.open(`${API_URL}/auth/github`, 'auth', 'popup,width=500,height=600');
-    };
-
     const signOut = () => {
         storageRemove(TOKEN_KEY);
         setUser(null);
     };
 
-    return { user, loading, signInWithGoogle, signInWithGitHub, signOut };
+    return { user, loading, signInWithGoogle, signOut };
 }

@@ -3,7 +3,7 @@ export interface OAuthUserInfo {
     email: string;
     name: string;
     picture: string | null;
-    provider: 'google' | 'github';
+    provider: 'google';
 }
 
 export interface TokenResponse {
