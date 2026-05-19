@@ -12,7 +12,15 @@ app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false, crossOriginOpenerPolicy: false }));
 app.use(
     cors({
-        origin: env().CLIENT_URL,
+        origin: (origin, callback) => {
+            const allowed = env().CLIENT_URL;
+            // Allow the production frontend, any localhost port (local dev), and same-origin requests
+            if (!origin || origin === allowed || /^http:\/\/localhost:\d+$/.test(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error(`CORS: origin '${origin}' not allowed`));
+            }
+        },
         credentials: true,
     })
 );
