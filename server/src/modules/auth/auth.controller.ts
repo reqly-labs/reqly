@@ -1,7 +1,8 @@
-import { randomBytes, randomUUID } from 'node:crypto';
 import type { Request, Response } from 'express';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { env } from '../../config/env.js';
 import { AppError } from '../../shared/errors.js';
+import { upsertUser } from '../users/users.service.js';
 import { buildGoogleAuthUrl, exchangeGoogleCode, generateToken } from './auth.service.js';
 import type { OAuthUserInfo } from './auth.types.js';
 
@@ -21,11 +22,12 @@ function stateCookieOptions() {
 
 function buildPostMessageHtml(data: object): { html: string; nonce: string } {
     const nonce = randomBytes(16).toString('base64url');
+    const clientOrigin = env().CLIENT_URL.replace(/\/$/, '');
     const json = JSON.stringify(data)
         .replace(/</g, '\\u003c')
         .replace(/>/g, '\\u003e')
         .replace(/&/g, '\\u0026');
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><script nonce="${nonce}">if(window.opener){window.opener.postMessage(${json},"*");}window.close();<\/script></body></html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><script nonce="${nonce}">if(window.opener){window.opener.postMessage(${json},"${clientOrigin}");}window.close();<\/script></body></html>`;
     return { html, nonce };
 }
 
@@ -58,7 +60,7 @@ export async function handleGoogleCallback(req: Request, res: Response): Promise
 
     try {
         const userInfo = await exchangeGoogleCode(code);
-        sendAuthResponse(res, userInfo);
+        await sendAuthResponse(res, userInfo);
     } catch {
         sendPostMessage(res, { error: 'Google authentication failed' });
     }
@@ -69,7 +71,14 @@ export function getMe(req: Request, res: Response): void {
     res.json({ user: req.user });
 }
 
-function sendAuthResponse(res: Response, userInfo: OAuthUserInfo): void {
+async function sendAuthResponse(res: Response, userInfo: OAuthUserInfo): Promise<void> {
     const result = generateToken(userInfo);
+    await upsertUser({
+        id: result.user.uid,
+        email: result.user.email,
+        name: result.user.name,
+        picture: result.user.picture,
+        provider: userInfo.provider,
+    });
     sendPostMessage(res, { type: 'auth-success', ...result });
 }

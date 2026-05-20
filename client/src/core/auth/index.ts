@@ -62,8 +62,10 @@ export function useAuthState() {
     }, []);
 
     useEffect(() => {
+        const apiOrigin = new URL(API_URL).origin;
+
         const handler = (event: MessageEvent) => {
-            if (event.origin !== new URL(API_URL).origin) return;
+            if (event.origin !== apiOrigin && event.origin !== window.location.origin) return;
 
             const data = event.data as { type?: string; token?: string; user?: AuthUser };
 

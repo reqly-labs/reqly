@@ -8,7 +8,7 @@ export interface AuthPayload {
     email: string;
     name: string;
     picture: string | null;
-    provider: 'google' | 'github';
+    provider: 'google';
 }
 
 declare global {
