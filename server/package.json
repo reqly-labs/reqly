@@ -1,0 +1,39 @@
+{
+    "name": "reqly-server",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "tsx watch src/server.ts",
+        "build": "prisma generate && tsc",
+        "start": "node dist/server.js",
+        "postinstall": "prisma generate",
+        "db:migrate": "prisma migrate deploy",
+        "db:migrate:dev": "prisma migrate dev",
+        "db:status": "prisma migrate status",
+        "format": "prettier --write ."
+    },
+    "dependencies": {
+        "@neondatabase/serverless": "^1.1.0",
+        "@prisma/adapter-neon": "^7.8.0",
+        "@prisma/client": "^7.8.0",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.5",
+        "dotenv": "^16.5.0",
+        "express": "^5.1.0",
+        "express-rate-limit": "^8.5.2",
+        "helmet": "^8.1.0",
+        "jsonwebtoken": "^9.0.2",
+        "prisma": "^7.8.0",
+        "zod": "^3.24.2"
+    },
+    "devDependencies": {
+        "@types/cookie-parser": "^1.4.10",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.3",
+        "@types/jsonwebtoken": "^9.0.10",
+        "@types/node": "^22.16.5",
+        "prettier": "^3.8.3",
+        "tsx": "^4.20.3",
+        "typescript": "^5.8.3"
+    }
+}
