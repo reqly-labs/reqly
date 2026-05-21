@@ -30,16 +30,32 @@ function corsProxyPlugin(): Plugin {
             return;
         }
 
+        let target: URL;
+        try {
+            target = new URL(targetUrl);
+        } catch {
+            res.statusCode = 400;
+            res.end('Invalid X-Proxy-Url value');
+            return;
+        }
+
         const chunks: Buffer[] = [];
-        await new Promise<void>((resolve, reject) => {
-            req.on('data', (chunk: Buffer) => chunks.push(chunk));
-            req.on('end', resolve);
-            req.on('error', reject);
-        });
+        try {
+            await new Promise<void>((resolve, reject) => {
+                req.on('data', (chunk: Buffer) => chunks.push(chunk));
+                req.on('end', resolve);
+                req.on('error', reject);
+            });
+        } catch {
+            if (!res.headersSent) {
+                res.statusCode = 400;
+                res.end('Failed to read request body');
+            }
+            return;
+        }
 
         const body = chunks.length > 0 ? Buffer.concat(chunks) : undefined;
         const method = req.method ?? 'GET';
-        const target = new URL(targetUrl);
         const headers: Record<string, string> = {};
 
         for (const [key, value] of Object.entries(req.headers)) {
@@ -66,7 +82,6 @@ function corsProxyPlugin(): Plugin {
 
             for (const [key, value] of Object.entries(upstream.headers)) {
                 if (typeof value === 'undefined') continue;
-
                 const normalizedKey = key.toLowerCase();
                 if (
                     normalizedKey === 'content-encoding' ||
@@ -75,7 +90,6 @@ function corsProxyPlugin(): Plugin {
                 ) {
                     continue;
                 }
-
                 res.setHeader(key, Array.isArray(value) ? value : String(value));
             }
 
@@ -83,23 +97,33 @@ function corsProxyPlugin(): Plugin {
             res.setHeader('Content-Length', responseBody.byteLength);
             res.end(responseBody);
         } catch (error: unknown) {
-            console.error('[cors-proxy]', error);
-            res.statusCode = 502;
-            res.end(error instanceof Error ? error.message : String(error));
+            if (!res.headersSent) {
+                res.statusCode = 502;
+                res.end(error instanceof Error ? error.message : String(error));
+            }
         }
+    }
+
+    function mountProxy(middlewares: {
+        use: (path: string, fn: (req: IncomingMessage, res: ServerResponse) => void) => void;
+    }) {
+        middlewares.use('/__proxy', (req: IncomingMessage, res: ServerResponse) => {
+            handler(req, res).catch((error: unknown) => {
+                if (!res.headersSent) {
+                    res.statusCode = 502;
+                    res.end(error instanceof Error ? error.message : 'Proxy error');
+                }
+            });
+        });
     }
 
     return {
         name: 'cors-proxy',
         configureServer(server) {
-            server.middlewares.use('/__proxy', (req, res, next) => {
-                handler(req, res).catch(next);
-            });
+            mountProxy(server.middlewares);
         },
         configurePreviewServer(server) {
-            server.middlewares.use('/__proxy', (req, res, next) => {
-                handler(req, res).catch(next);
-            });
+            mountProxy(server.middlewares);
         },
     };
 }

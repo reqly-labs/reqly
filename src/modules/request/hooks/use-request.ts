@@ -22,7 +22,10 @@ function resolveTransport(targetUrl: string): {
     requestUrl: string;
     proxyHeaders: Record<string, string>;
 } {
-    if (import.meta.env.DEV) {
+    const { hostname } = window.location;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+
+    if (isLocalhost) {
         return {
             requestUrl: '/__proxy',
             proxyHeaders: { 'X-Proxy-Url': targetUrl },
