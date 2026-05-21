@@ -1,4 +1,4 @@
-import { useTheme } from '@/shared/lib/theme';
+import { useTheme } from '@/shared/lib/use-theme';
 import { cn } from '@/shared/utils/cn';
 import { json } from '@codemirror/lang-json';
 import { xml } from '@codemirror/lang-xml';

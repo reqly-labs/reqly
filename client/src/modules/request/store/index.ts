@@ -38,7 +38,6 @@ interface RequestState {
     body: string;
     formBody: KV[];
     multipartBody: FormDataField[];
-    /** File objects keyed by FormDataField.id — in-memory only, not persisted */
     multipartFiles: Record<string, File>;
     auth: Auth;
     response: ApiResponse | null;
