@@ -1,5 +1,5 @@
-import { useTheme } from '@/shared/lib/theme';
-import { cn } from '@/shared/utils/cn';
+import { useTheme } from '@/core/theme';
+import { cn } from '@/lib/utils';
 import { json } from '@codemirror/lang-json';
 import { xml } from '@codemirror/lang-xml';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';

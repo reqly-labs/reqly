@@ -8,7 +8,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/shared/components/ui/select';
-import { cn } from '@/shared/utils/cn';
+import { cn } from '@/lib/utils';
 import { Check, ChevronDown, Copy, Loader2, Send, Terminal } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useRequest } from '../../hooks/use-request';

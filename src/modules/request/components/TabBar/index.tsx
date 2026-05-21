@@ -1,4 +1,4 @@
-import { cn } from '@/shared/utils/cn';
+import { cn } from '@/lib/utils';
 import { Plus, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useRequestStore } from '../../store';

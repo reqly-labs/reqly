@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '@/core/storage';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Collection, SavedRequest, TabSnapshot } from '../types';
@@ -79,7 +80,6 @@ interface CollectionsActions {
     updateRequest: (collectionId: string, requestId: string, snapshot: TabSnapshot) => void;
     updateRequestByMethodUrl: (method: string, url: string, snapshot: TabSnapshot) => void;
     moveRequest: (fromCollectionId: string, toCollectionId: string, requestId: string) => void;
-    clearCollections: () => void;
 }
 
 export const useCollectionsStore = create<CollectionsState & CollectionsActions>()(
@@ -217,10 +217,6 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
                 }));
             },
 
-            clearCollections: () => {
-                set({ collections: [], expandedIds: [] });
-            },
-
             moveRequest: (fromCollectionId, toCollectionId, requestId) => {
                 set((s) => {
                     const from = findCollection(s.collections, fromCollectionId);
@@ -251,7 +247,7 @@ export const useCollectionsStore = create<CollectionsState & CollectionsActions>
             },
         }),
         {
-            name: 'reqly:collections',
+            name: STORAGE_KEYS.collections,
             partialize: (state) => ({
                 collections: state.collections.map(deepClearResponses),
                 expandedIds: state.expandedIds,

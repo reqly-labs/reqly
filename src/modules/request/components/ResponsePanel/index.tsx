@@ -1,7 +1,7 @@
 import { Button } from '@/shared/components/ui/button';
 import { CodeEditor } from '@/shared/components/ui/code-editor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
-import { cn } from '@/shared/utils/cn';
+import { cn } from '@/lib/utils';
 import { formatBytes, formatJson, formatXml } from '@/shared/utils/format';
 import { Check, Copy, Inbox, Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';

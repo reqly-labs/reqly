@@ -1,5 +1,5 @@
 import { storageGet, storageSet } from '@/core/storage';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 export type Theme = 'dark' | 'light';
 
@@ -8,16 +8,18 @@ interface ThemeContextValue {
     toggle: () => void;
 }
 
+const THEME_KEY = 'reqly:theme';
+
 const ThemeContext = createContext<ThemeContextValue>({
     theme: 'dark',
     toggle: () => {},
 });
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+export function ThemeProvider({ children }: { children: ReactNode }) {
     const [theme, setTheme] = useState<Theme>('dark');
 
     useEffect(() => {
-        const stored = storageGet<Theme>('reqly:theme');
+        const stored = storageGet<Theme>(THEME_KEY);
         if (stored === 'light' || stored === 'dark') {
             setTheme(stored);
         }
@@ -27,7 +29,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const root = document.documentElement;
         root.classList.toggle('dark', theme === 'dark');
         root.classList.toggle('light', theme === 'light');
-        storageSet('reqly:theme', theme);
+        storageSet(THEME_KEY, theme);
     }, [theme]);
 
     const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));

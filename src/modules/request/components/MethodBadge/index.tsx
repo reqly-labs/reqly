@@ -1,4 +1,4 @@
-import { cn } from '@/shared/utils/cn';
+import { cn } from '@/lib/utils';
 import type { HttpMethod } from '../../types';
 
 const METHOD_COLORS: Record<HttpMethod, string> = {

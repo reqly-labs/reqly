@@ -1,6 +1,6 @@
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
-import { cn } from '@/shared/utils/cn';
+import { cn } from '@/lib/utils';
 import {
     ChevronRight,
     Clock,

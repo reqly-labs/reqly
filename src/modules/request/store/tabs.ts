@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '@/core/storage';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { FormDataField, KV, Tab, TabSnapshot } from '../types';
@@ -57,7 +58,6 @@ interface TabsActions {
     renameTabByMethodUrl: (method: string, url: string, name: string) => void;
     linkTab: (tabId: string, savedRequestId: string, collectionId: string) => void;
     findTabByRequestId: (savedRequestId: string) => Tab | undefined;
-    clearTabs: () => void;
 }
 
 const initialTab = newTab();
@@ -139,14 +139,9 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             findTabByRequestId: (savedRequestId) => {
                 return get().tabs.find((t) => t.savedRequestId === savedRequestId);
             },
-
-            clearTabs: () => {
-                const fresh = newTab();
-                set({ tabs: [fresh], activeTabId: fresh.id });
-            },
         }),
         {
-            name: 'reqly:tabs',
+            name: STORAGE_KEYS.tabs,
             partialize: (state) => ({
                 tabs: state.tabs.map((t) => ({
                     ...t,
