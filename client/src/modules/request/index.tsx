@@ -1,6 +1,6 @@
 import { APP_NAME } from '@/core/constants';
 import { Button } from '@/shared/components/ui/button';
-import { useTheme } from '@/shared/lib/theme';
+import { useTheme } from '@/shared/lib/use-theme';
 import { Moon, PanelLeft, Sun } from 'lucide-react';
 import { useEffect } from 'react';
 import { RequestPanel } from './components/RequestPanel';

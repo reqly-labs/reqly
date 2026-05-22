@@ -7,10 +7,6 @@ import { useEffect, useRef, type ReactNode } from 'react';
 
 let _isSyncingFromCloud = false;
 
-export function isSyncingFromCloud() {
-    return _isSyncingFromCloud;
-}
-
 export function SyncProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const prevUidRef = useRef<string | null>(null);

@@ -168,8 +168,8 @@ export function ResponsePanel() {
 
     if (error) {
         return (
-            <div className="flex h-full items-center justify-center border border-destructive border-opacity-30 rounded-md bg-(--color-surface)">
-                <span className="text-xs font-semibold text-destructive">Request failed</span>
+            <div className="flex h-full items-center justify-center border border-destructive border-opacity-30 rounded-md bg-(--color-surface) px-6 text-center">
+                <span className="max-w-md text-xs font-semibold text-destructive">{error}</span>
             </div>
         );
     }

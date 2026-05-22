@@ -23,6 +23,7 @@ model User {
 model Collection {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
+  sortOrder Int      @default(0) @map("sort_order")
   data      Json
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -30,5 +31,6 @@ model Collection {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, sortOrder])
   @@map("collections")
 }

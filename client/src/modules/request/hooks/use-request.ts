@@ -165,7 +165,11 @@ export function useRequest() {
                 previewUrl,
             });
         } catch {
-            setError('Request failed');
+            setError(
+                import.meta.env.DEV
+                    ? 'Request failed'
+                    : 'Request failed. Hosted Reqly can only call browser-accessible APIs. For localhost APIs, run Reqly locally.'
+            );
         } finally {
             setLoading(false);
         }

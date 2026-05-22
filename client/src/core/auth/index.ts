@@ -65,9 +65,14 @@ export function useAuthState() {
         const apiOrigin = new URL(API_URL).origin;
 
         const handler = (event: MessageEvent) => {
-            if (event.origin !== apiOrigin && event.origin !== window.location.origin) return;
+            if (event.origin !== apiOrigin) return;
 
-            const data = event.data as { type?: string; token?: string; user?: AuthUser };
+            const data = event.data as {
+                type?: string;
+                token?: string;
+                user?: AuthUser;
+                error?: string;
+            };
 
             if (data.type === 'auth-success' && data.token && data.user) {
                 storageSet(TOKEN_KEY, data.token);
@@ -80,7 +85,9 @@ export function useAuthState() {
     }, []);
 
     const signInWithGoogle = () => {
-        window.open(`${API_URL}/auth/google`, 'auth', 'popup,width=500,height=600');
+        const url = new URL(`${API_URL}/auth/google`);
+        url.searchParams.set('origin', window.location.origin);
+        window.open(url.toString(), 'auth', 'popup,width=500,height=600');
     };
 
     const signOut = () => {

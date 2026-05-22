@@ -27,11 +27,23 @@ export async function exchangeGoogleCode(code: string): Promise<OAuthUserInfo> {
         }),
     });
 
-    const tokens = (await tokenRes.json()) as { access_token: string };
+    if (!tokenRes.ok) {
+        throw new Error('Failed to exchange Google authorization code');
+    }
+
+    const tokens = (await tokenRes.json()) as { access_token?: string };
+
+    if (!tokens.access_token) {
+        throw new Error('Google token response did not include an access token');
+    }
 
     const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
         headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
+
+    if (!userRes.ok) {
+        throw new Error('Failed to load Google user profile');
+    }
 
     const profile = (await userRes.json()) as {
         id: string;
@@ -39,6 +51,10 @@ export async function exchangeGoogleCode(code: string): Promise<OAuthUserInfo> {
         name: string;
         picture?: string;
     };
+
+    if (!profile.id || !profile.email || !profile.name) {
+        throw new Error('Google profile response is incomplete');
+    }
 
     return {
         id: profile.id,

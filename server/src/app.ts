@@ -14,7 +14,6 @@ app.use(
     cors({
         origin: (origin, callback) => {
             const allowed = env().CLIENT_URL;
-            // Allow the production frontend, any localhost port (local dev), and same-origin requests
             if (!origin || origin === allowed || /^http:\/\/localhost:\d+$/.test(origin)) {
                 callback(null, true);
             } else {

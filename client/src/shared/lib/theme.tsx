@@ -1,17 +1,6 @@
 import { storageGet, storageSet } from '@/core/storage';
-import { createContext, useContext, useEffect, useState } from 'react';
-
-export type Theme = 'dark' | 'light';
-
-interface ThemeContextValue {
-    theme: Theme;
-    toggle: () => void;
-}
-
-const ThemeContext = createContext<ThemeContextValue>({
-    theme: 'dark',
-    toggle: () => {},
-});
+import { useEffect, useState } from 'react';
+import { ThemeContext, type Theme } from './theme-context';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [theme, setTheme] = useState<Theme>('dark');
@@ -34,6 +23,3 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     return <ThemeContext.Provider value={{ theme, toggle }}>{children}</ThemeContext.Provider>;
 }
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const useTheme = () => useContext(ThemeContext);
