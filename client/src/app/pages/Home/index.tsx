@@ -1,5 +1,5 @@
 import { APP_NAME } from '@/core/constants';
-import { useTheme } from '@/shared/lib/theme';
+import { useTheme } from '@/shared/lib/use-theme';
 import { cn } from '@/shared/utils/cn';
 import { useQuery } from '@tanstack/react-query';
 import {
