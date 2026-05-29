@@ -1,3 +1,10 @@
+import {
+    SIDEBAR_DEFAULT_WIDTH,
+    SIDEBAR_MAX_WIDTH,
+    SIDEBAR_MIN_WIDTH,
+    SIDEBAR_WIDTH_STORAGE_KEY,
+} from '@/core/constants';
+import { storageGet, storageSet } from '@/core/storage';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { cn } from '@/shared/utils/cn';
@@ -868,20 +875,11 @@ export function Sidebar() {
     const { initFromSnapshot } = useRequestStore();
     const [creating, setCreating] = useState(false);
 
-    const MIN_WIDTH = 180;
-    const MAX_WIDTH = 520;
-
     const [width, setWidth] = useState<number>(() => {
-        try {
-            const stored = localStorage.getItem('reqly:sidebar-width');
-            if (stored) {
-                const n = parseInt(stored, 10);
-                if (!isNaN(n)) return Math.min(Math.max(n, MIN_WIDTH), MAX_WIDTH);
-            }
-        } catch {
-            // ignore storage errors
-        }
-        return 256;
+        const stored = storageGet<number>(SIDEBAR_WIDTH_STORAGE_KEY);
+        if (stored !== null)
+            return Math.min(Math.max(stored, SIDEBAR_MIN_WIDTH), SIDEBAR_MAX_WIDTH);
+        return SIDEBAR_DEFAULT_WIDTH;
     });
 
     const [isResizing, setIsResizing] = useState(false);
@@ -905,18 +903,20 @@ export function Sidebar() {
 
         const handleMouseMove = (ev: MouseEvent) => {
             const delta = ev.clientX - startX;
-            const newWidth = Math.min(Math.max(startWidth + delta, MIN_WIDTH), MAX_WIDTH);
+            const newWidth = Math.min(
+                Math.max(startWidth + delta, SIDEBAR_MIN_WIDTH),
+                SIDEBAR_MAX_WIDTH
+            );
             setWidth(newWidth);
         };
 
         const handleMouseUp = (ev: MouseEvent) => {
             const delta = ev.clientX - startX;
-            const finalWidth = Math.min(Math.max(startWidth + delta, MIN_WIDTH), MAX_WIDTH);
-            try {
-                localStorage.setItem('reqly:sidebar-width', String(finalWidth));
-            } catch {
-                // ignore storage errors
-            }
+            const finalWidth = Math.min(
+                Math.max(startWidth + delta, SIDEBAR_MIN_WIDTH),
+                SIDEBAR_MAX_WIDTH
+            );
+            storageSet(SIDEBAR_WIDTH_STORAGE_KEY, finalWidth);
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
             document.body.style.cursor = '';
