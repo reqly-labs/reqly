@@ -868,6 +868,24 @@ export function Sidebar() {
     const { initFromSnapshot } = useRequestStore();
     const [creating, setCreating] = useState(false);
 
+    const MIN_WIDTH = 180;
+    const MAX_WIDTH = 520;
+
+    const [width, setWidth] = useState<number>(() => {
+        try {
+            const stored = localStorage.getItem('reqly:sidebar-width');
+            if (stored) {
+                const n = parseInt(stored, 10);
+                if (!isNaN(n)) return Math.min(Math.max(n, MIN_WIDTH), MAX_WIDTH);
+            }
+        } catch {
+            // ignore storage errors
+        }
+        return 256;
+    });
+
+    const [isResizing, setIsResizing] = useState(false);
+
     if (!sidebarOpen) return null;
 
     const handleNewRequest = () => {
@@ -877,8 +895,44 @@ export function Sidebar() {
         if (newTab) initFromSnapshot(newTab.snapshot);
     };
 
+    const handleResizeMouseDown = (e: React.MouseEvent) => {
+        e.preventDefault();
+        const startX = e.clientX;
+        const startWidth = width;
+        setIsResizing(true);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        const handleMouseMove = (ev: MouseEvent) => {
+            const delta = ev.clientX - startX;
+            const newWidth = Math.min(Math.max(startWidth + delta, MIN_WIDTH), MAX_WIDTH);
+            setWidth(newWidth);
+        };
+
+        const handleMouseUp = (ev: MouseEvent) => {
+            const delta = ev.clientX - startX;
+            const finalWidth = Math.min(Math.max(startWidth + delta, MIN_WIDTH), MAX_WIDTH);
+            try {
+                localStorage.setItem('reqly:sidebar-width', String(finalWidth));
+            } catch {
+                // ignore storage errors
+            }
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            setIsResizing(false);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    };
+
     return (
-        <div className="flex flex-col h-full w-64 shrink-0 border-r border-(--color-border) bg-(--color-surface-raised)/40">
+        <div
+            style={{ width }}
+            className="relative flex flex-col h-full shrink-0 border-r border-(--color-border) bg-(--color-surface-raised)/40"
+        >
             <div className="flex items-center justify-between px-3 py-2.5 border-b border-(--color-border) shrink-0">
                 <span className="text-xs font-semibold text-(--color-text) tracking-wide uppercase">
                     Collections
@@ -915,6 +969,23 @@ export function Sidebar() {
                 ))}
 
                 {creating && <NewCollectionInput onDone={() => setCreating(false)} />}
+            </div>
+
+            {/* Resize handle */}
+            <div
+                role="separator"
+                aria-orientation="vertical"
+                onMouseDown={handleResizeMouseDown}
+                className="absolute inset-y-0 -right-0.75 w-1.5 cursor-col-resize z-20 group/handle"
+            >
+                <div
+                    className={cn(
+                        'absolute inset-y-0 left-0.5 w-0.5 rounded-full transition-colors duration-150',
+                        isResizing
+                            ? 'bg-(--color-primary)/70'
+                            : 'bg-transparent group-hover/handle:bg-(--color-primary)/40'
+                    )}
+                />
             </div>
         </div>
     );
