@@ -1,7 +1,7 @@
-import { AppLayout } from '@/app/layouts/AppLayout';
+import { AppLayout } from '@/app/_layouts/AppLayout';
+import { AppProviders } from '@/app/_providers';
 import { Home } from '@/app/pages/Home';
 import { NotFoundPage } from '@/app/pages/NotFound';
-import { AppProviders } from '@/app/providers';
 import { RequestModule } from '@/modules/request';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
