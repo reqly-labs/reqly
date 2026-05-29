@@ -1,5 +1,4 @@
 import { HTTP_METHODS } from '@/core/constants';
-import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import {
     Select,
@@ -155,26 +154,13 @@ export function UrlBar() {
                     aria-label="Request URL"
                     spellCheck={false}
                 />
-
-                <Button
-                    onClick={handleSend}
-                    disabled={loading}
-                    className="rounded-none px-5 gap-2 shrink-0"
-                >
-                    {loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                        <Send className="h-4 w-4" />
-                    )}
-                    Send
-                </Button>
             </div>
-            <SendDropdown />
+            <SendDropdown onSend={handleSend} loading={loading} />
         </div>
     );
 }
 
-function SendDropdown() {
+function SendDropdown({ onSend, loading }: { onSend: () => void; loading: boolean }) {
     const [open, setOpen] = useState(false);
     const [copied, setCopied] = useState<'url' | 'curl' | null>(null);
     const ref = useRef<HTMLDivElement>(null);
@@ -215,15 +201,30 @@ function SendDropdown() {
     };
 
     return (
-        <div className="relative" ref={ref}>
+        <div
+            ref={ref}
+            className="relative flex items-stretch rounded-r-md border border-l-0 border-(--color-border)"
+        >
+            <button
+                type="button"
+                onClick={onSend}
+                disabled={loading}
+                className="flex items-center gap-2 px-5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50 text-sm font-medium transition-colors shrink-0 cursor-pointer"
+            >
+                {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                    <Send className="h-4 w-4" />
+                )}
+                Send
+            </button>
+
+            <div className="w-px bg-primary-foreground/20 shrink-0" />
+
             <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className={cn(
-                    'flex items-center justify-center h-full w-8 border border-l-0 border-(--color-border)',
-                    'bg-primary text-primary-foreground hover:bg-primary/90 transition-colors',
-                    'rounded-r-md cursor-pointer'
-                )}
+                className="flex items-center justify-center w-8 rounded-r-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
                 aria-label="More send options"
             >
                 <ChevronDown className="h-3.5 w-3.5" />
