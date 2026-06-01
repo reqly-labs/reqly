@@ -1,4 +1,4 @@
-import type { Collection } from '@/modules/request/types';
+import type { Collection } from '@/modules/request/_types';
 import { getToken } from '../auth';
 
 const API_URL = import.meta.env.VITE_API_URL as string;

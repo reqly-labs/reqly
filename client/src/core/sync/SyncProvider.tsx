@@ -1,8 +1,8 @@
 import { useAuth } from '@/core/auth';
 import { fetchCloudCollections, saveCollectionsToCloud } from '@/core/sync';
-import { useCollectionsStore } from '@/modules/request/store/collections';
-import { useTabsStore } from '@/modules/request/store/tabs';
-import type { Collection } from '@/modules/request/types';
+import { useCollectionsStore } from '@/modules/request/_store/collections';
+import { useTabsStore } from '@/modules/request/_store/tabs';
+import type { Collection } from '@/modules/request/_types';
 import { useEffect, useRef, type ReactNode } from 'react';
 
 let _isSyncingFromCloud = false;
