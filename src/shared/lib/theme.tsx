@@ -1,9 +1,10 @@
 import { storageGet, storageSet } from '@/core/storage';
+import { defaultThemeName } from '@/shared/lib/design-system';
 import { useEffect, useState } from 'react';
 import { ThemeContext, type Theme } from './theme-context';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-    const [theme, setTheme] = useState<Theme>('dark');
+    const [theme, setTheme] = useState<Theme>(defaultThemeName);
 
     useEffect(() => {
         const stored = storageGet<Theme>('reqly:theme');
