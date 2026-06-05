@@ -15,14 +15,16 @@ export function FeaturesSection() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {FEATURES.map(({ icon: Icon, colorClass, bgStyle, title, description }) => (
+                    {FEATURES.map(({ icon: Icon, colorClass, bgClass, title, description }) => (
                         <div
                             key={title}
                             className="p-5 rounded-xl border border-(--color-border) bg-(--color-surface) hover:border-(--color-primary)/40 hover:bg-(--color-surface-hover) transition-all duration-200 group"
                         >
                             <div
-                                className="h-10 w-10 rounded-lg flex items-center justify-center mb-4"
-                                style={bgStyle}
+                                className={cn(
+                                    'h-10 w-10 rounded-lg flex items-center justify-center mb-4',
+                                    bgClass
+                                )}
                             >
                                 <Icon className={cn('h-5 w-5', colorClass)} />
                             </div>

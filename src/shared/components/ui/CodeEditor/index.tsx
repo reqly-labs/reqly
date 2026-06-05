@@ -69,8 +69,8 @@ export function CodeEditor({
                         fontSize: '12px',
                         backgroundColor: 'transparent',
                         color: 'var(--color-text)',
-                        '--cm-value': isDark ? 'oklch(0.84 0.16 150)' : 'oklch(0.44 0.17 150)',
-                        '--cm-key': isDark ? 'oklch(0.9 0.03 160)' : 'oklch(0.26 0.03 160)',
+                        '--cm-value': 'var(--color-success)',
+                        '--cm-key': 'var(--color-info)',
                         '--cm-muted': 'var(--color-text-subtle)',
                     },
                     '.cm-scroller': {

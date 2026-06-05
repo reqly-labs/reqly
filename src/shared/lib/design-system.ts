@@ -2,9 +2,9 @@ import { createThemeCss, defaultTheme, defaultThemeName, light } from '@reqly/de
 
 const DESIGN_SYSTEM_STYLE_ID = 'reqly-design-system';
 
-const designSystemCss = createThemeCss(defaultTheme, light, {
-    lightSelector: ':root, html.dark',
-    darkSelector: 'html.light',
+const designSystemCss = createThemeCss(light, defaultTheme, {
+    lightSelector: 'html.light',
+    darkSelector: ':root, html.dark',
 });
 
 export function injectDesignSystemStyles() {

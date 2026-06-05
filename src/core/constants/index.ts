@@ -1,8 +1,9 @@
+import { brand } from '@reqly/design-system';
 import { Cloud, Code2, FolderOpen, Globe, KeyRound, Zap } from 'lucide-react';
 
-export const APP_NAME = 'Reqly';
+export const APP_NAME = brand.name;
 export const APP_VERSION = '0.1.0';
-export const APP_DESCRIPTION = 'A modern, lightweight HTTP client for developers.';
+export const APP_DESCRIPTION = brand.description;
 export const APP_REPO = 'https://github.com/arturbomtempo/reqly';
 
 export const DEFAULT_REQUEST_TIMEOUT = 30_000;
@@ -17,22 +18,21 @@ export const SIDEBAR_DEFAULT_WIDTH = 256;
 export const SIDEBAR_WIDTH_STORAGE_KEY = 'reqly:sidebar-width';
 
 export const REPO_URL = 'https://github.com/arturbomtempo-dev/reqly';
-export const MASCOT_URL =
-    'https://arturbomtempo-dev.github.io/arturbomtempo-cdn/assets/images/projects/reqly/mascot.png';
+export const MASCOT_URL = brand.assets.mascot;
 
 export const FEATURES = [
     {
         icon: Globe,
-        colorClass: 'text-info',
-        bgStyle: { background: 'oklch(0.55 0.16 230 / 0.12)' },
+        colorClass: 'text-(--color-info)',
+        bgClass: 'bg-(--color-info)/12',
         title: 'HTTP Request Builder',
         description:
             'Compose any HTTP request with full control over params, headers, body formats, and authentication.',
     },
     {
         icon: Zap,
-        colorClass: 'text-warning',
-        bgStyle: { background: 'oklch(0.6 0.16 75 / 0.12)' },
+        colorClass: 'text-(--color-warning)',
+        bgClass: 'bg-(--color-warning)/12',
         title: 'Response Inspector',
         description:
             'Analyze responses with status codes, timing, size breakdowns, formatted bodies, and image previews.',
@@ -40,15 +40,15 @@ export const FEATURES = [
     {
         icon: FolderOpen,
         colorClass: 'text-(--color-primary)',
-        bgStyle: { background: 'oklch(0.71 0.2 154 / 0.12)' },
+        bgClass: 'bg-(--color-primary)/12',
         title: 'Collections & Folders',
         description:
             'Organize saved requests into named collections and nested folders for a clean, searchable workspace.',
     },
     {
         icon: Code2,
-        colorClass: 'text-success',
-        bgStyle: { background: 'oklch(0.55 0.17 152 / 0.12)' },
+        colorClass: 'text-(--color-success)',
+        bgClass: 'bg-(--color-success)/12',
         title: 'cURL Import & Export',
         description:
             'Paste any cURL command to instantly populate a request, or copy your current request as cURL.',
@@ -56,7 +56,7 @@ export const FEATURES = [
     {
         icon: KeyRound,
         colorClass: 'text-(--color-danger)',
-        bgStyle: { background: 'oklch(0.55 0.22 25 / 0.12)' },
+        bgClass: 'bg-(--color-danger)/12',
         title: 'Auth Support',
         description:
             'Bearer token, Basic auth, and API Key authentication built-in — no plugins or extensions needed.',
@@ -64,7 +64,7 @@ export const FEATURES = [
     {
         icon: Cloud,
         colorClass: 'text-(--color-method-put)',
-        bgStyle: { background: 'oklch(0.52 0.16 230 / 0.12)' },
+        bgClass: 'bg-(--color-method-put)/12',
         title: 'Cloud Sync',
         description:
             'Sign in with Google to sync your collections across all browsers and devices, automatically.',

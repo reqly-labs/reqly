@@ -6,9 +6,9 @@ export function AppPreviewMockup() {
         <div className="relative w-full rounded-xl border border-(--color-border) bg-(--color-surface) shadow-2xl overflow-hidden select-none">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-(--color-border) bg-(--color-surface-raised)/50">
                 <div className="flex gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-destructive" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-warning" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-success" />
                 </div>
                 <div className="flex-1 flex items-center gap-1.5 justify-center">
                     <img

@@ -7,14 +7,16 @@ import { GitHubIcon } from '../GitHubIcon';
 export function OpenSourceSection() {
     const { data: stars } = useGitHubStars();
 
+    const openSourceGlowStyle = {
+        background:
+            'radial-gradient(ellipse 60% 50% at 50% 100%, color-mix(in oklch, var(--color-primary) 12%, transparent), transparent)',
+    };
+
     return (
         <section className="py-20 md:py-28 border-t border-(--color-border) relative overflow-hidden">
             <div
                 className="absolute inset-0 pointer-events-none"
-                style={{
-                    background:
-                        'radial-gradient(ellipse 60% 50% at 50% 100%, oklch(0.71 0.2 154 / 0.06), transparent)',
-                }}
+                style={openSourceGlowStyle}
                 aria-hidden
             />
             <div className="relative max-w-2xl mx-auto px-4 sm:px-6 text-center">

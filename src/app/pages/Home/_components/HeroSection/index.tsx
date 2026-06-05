@@ -8,11 +8,16 @@ import { GitHubIcon } from '../GitHubIcon';
 export function HeroSection() {
     const { data: stars } = useGitHubStars();
 
+    const heroGlowStyle = {
+        background:
+            'radial-gradient(ellipse 60% 50% at 50% 100%, color-mix(in oklch, var(--color-primary) 18%, transparent), transparent)',
+    };
+
     return (
         <section className="relative overflow-hidden">
             <div
                 className="absolute top-0 left-1/2 -translate-x-1/2 w-225 h-150 rounded-full blur-[160px] pointer-events-none"
-                style={{ background: 'oklch(0.71 0.2 154 / 0.07)' }}
+                style={heroGlowStyle}
                 aria-hidden
             />
 

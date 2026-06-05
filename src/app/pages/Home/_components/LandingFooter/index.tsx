@@ -1,4 +1,4 @@
-import { APP_NAME, MASCOT_URL, REPO_URL } from '@/core/constants';
+import { APP_DESCRIPTION, APP_NAME, MASCOT_URL, REPO_URL } from '@/core/constants';
 
 export function LandingFooter() {
     return (
@@ -13,7 +13,7 @@ export function LandingFooter() {
                     />
                     <span className="text-sm font-semibold text-(--color-text)">{APP_NAME}</span>
                     <span className="text-sm text-(--color-text-subtle) hidden sm:inline">
-                        — Fast and practical HTTP client for developers.
+                        — {APP_DESCRIPTION}
                     </span>
                 </div>
 

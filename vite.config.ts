@@ -111,6 +111,49 @@ export default defineConfig({
         tsConfigPaths({ projects: ['./tsconfig.json'] }),
         react(),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (!id.includes('node_modules')) return;
+
+                    if (
+                        id.includes('/node_modules/@uiw/react-codemirror/') ||
+                        id.includes('/node_modules/@codemirror/') ||
+                        id.includes('/node_modules/@lezer/')
+                    ) {
+                        return 'codemirror';
+                    }
+
+                    if (
+                        id.includes('/node_modules/react/') ||
+                        id.includes('/node_modules/react-dom/') ||
+                        id.includes('/node_modules/react-router-dom/')
+                    ) {
+                        return 'react-vendor';
+                    }
+
+                    if (
+                        id.includes('/node_modules/@tanstack/react-query/') ||
+                        id.includes('/node_modules/zustand/') ||
+                        id.includes('/node_modules/axios/')
+                    ) {
+                        return 'data-vendor';
+                    }
+
+                    if (
+                        id.includes('/node_modules/@radix-ui/') ||
+                        id.includes('/node_modules/lucide-react/') ||
+                        id.includes('/node_modules/class-variance-authority/') ||
+                        id.includes('/node_modules/clsx/') ||
+                        id.includes('/node_modules/tailwind-merge/')
+                    ) {
+                        return 'ui-vendor';
+                    }
+                },
+            },
+        },
+    },
     resolve: {
         alias: { '@': `${process.cwd()}/src` },
     },
