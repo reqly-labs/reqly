@@ -1,6 +1,5 @@
 import { AppLayout } from '@/app/_layouts/AppLayout';
 import { AppProviders } from '@/app/_providers';
-import { Home } from '@/app/pages/Home';
 import { NotFoundPage } from '@/app/pages/NotFound';
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
@@ -15,9 +14,8 @@ export function App() {
         <AppProviders>
             <BrowserRouter>
                 <Routes>
-                    <Route path="/" element={<Home />} />
                     <Route
-                        path="/app"
+                        path="/"
                         element={
                             <AppLayout>
                                 <Suspense fallback={null}>

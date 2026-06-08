@@ -1,10 +1,8 @@
 import { brand } from '@reqly/design-system';
-import { Cloud, Code2, FolderOpen, Globe, KeyRound, Zap } from 'lucide-react';
 
 export const APP_NAME = brand.name;
 export const APP_VERSION = '0.1.0';
 export const APP_DESCRIPTION = brand.description;
-export const APP_REPO = 'https://github.com/arturbomtempo/reqly';
 
 export const DEFAULT_REQUEST_TIMEOUT = 30_000;
 
@@ -19,78 +17,3 @@ export const SIDEBAR_WIDTH_STORAGE_KEY = 'reqly:sidebar-width';
 
 export const REPO_URL = 'https://github.com/arturbomtempo-dev/reqly';
 export const MASCOT_URL = brand.assets.mascot;
-
-export const FEATURES = [
-    {
-        icon: Globe,
-        colorClass: 'text-(--color-info)',
-        bgClass: 'bg-(--color-info)/12',
-        title: 'HTTP Request Builder',
-        description:
-            'Compose any HTTP request with full control over params, headers, body formats, and authentication.',
-    },
-    {
-        icon: Zap,
-        colorClass: 'text-(--color-warning)',
-        bgClass: 'bg-(--color-warning)/12',
-        title: 'Response Inspector',
-        description:
-            'Analyze responses with status codes, timing, size breakdowns, formatted bodies, and image previews.',
-    },
-    {
-        icon: FolderOpen,
-        colorClass: 'text-(--color-primary)',
-        bgClass: 'bg-(--color-primary)/12',
-        title: 'Collections & Folders',
-        description:
-            'Organize saved requests into named collections and nested folders for a clean, searchable workspace.',
-    },
-    {
-        icon: Code2,
-        colorClass: 'text-(--color-success)',
-        bgClass: 'bg-(--color-success)/12',
-        title: 'cURL Import & Export',
-        description:
-            'Paste any cURL command to instantly populate a request, or copy your current request as cURL.',
-    },
-    {
-        icon: KeyRound,
-        colorClass: 'text-(--color-danger)',
-        bgClass: 'bg-(--color-danger)/12',
-        title: 'Auth Support',
-        description:
-            'Bearer token, Basic auth, and API Key authentication built-in — no plugins or extensions needed.',
-    },
-    {
-        icon: Cloud,
-        colorClass: 'text-(--color-method-put)',
-        bgClass: 'bg-(--color-method-put)/12',
-        title: 'Cloud Sync',
-        description:
-            'Sign in with Google to sync your collections across all browsers and devices, automatically.',
-    },
-] as const;
-
-export const QUICK_START_STEPS = [
-    {
-        step: '01',
-        title: 'Open the app',
-        description:
-            'Launch Reqly directly in your browser — no installation needed. Or run it locally for full localhost support.',
-        action: { label: 'Open App', href: '/app', internal: true as const },
-    },
-    {
-        step: '02',
-        title: 'Compose a request',
-        description:
-            'Enter your URL, select an HTTP method, add params, headers, or a request body. Hit Send and inspect the response instantly.',
-        code: 'GET https://api.example.com/users',
-    },
-    {
-        step: '03',
-        title: 'Save & organize',
-        description:
-            'Save requests into collections and folders. Sign in with Google to sync everything across all your devices.',
-        action: { label: 'Read the README', href: `${REPO_URL}#readme`, internal: false as const },
-    },
-] as const;
